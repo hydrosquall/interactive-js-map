@@ -3,9 +3,12 @@ import thunk from 'redux-thunk';
 import { createHashHistory } from 'history';
 import { routerMiddleware, routerActions } from 'connected-react-router';
 import { createLogger } from 'redux-logger';
-import createRootReducer from '../reducers';
-import * as counterActions from '../actions/counter';
-import type { counterStateType } from '../reducers/types';
+
+import createRootReducer from './reducers';
+import * as counterActions from './actions/counter';
+import * as dependencyTreeActions from './actions/dependency-tree';
+
+import type { counterStateType } from './reducers/types';
 
 const history = createHashHistory();
 
@@ -37,7 +40,8 @@ const configureStore = (initialState?: counterStateType) => {
   // Redux DevTools Configuration
   const actionCreators = {
     ...counterActions,
-    ...routerActions
+    ...routerActions,
+    ...dependencyTreeActions
   };
   // If Redux DevTools Extension is installed use it, otherwise use Redux compose
   /* eslint-disable no-underscore-dangle */
@@ -58,10 +62,10 @@ const configureStore = (initialState?: counterStateType) => {
 
   if (module.hot) {
     module.hot.accept(
-      '../reducers',
+      './reducers',
       // eslint-disable-next-line global-require
       () => {
-        const nextCreateRootReducer = require('../reducers').default;
+        const nextCreateRootReducer = require('./reducers').default;
         store.replaceReducer(nextCreateRootReducer(history));
       }
     );

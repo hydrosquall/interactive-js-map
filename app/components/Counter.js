@@ -1,28 +1,32 @@
-// @flow
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import Graph from 'react-graph-vis';
+
+
 import styles from './Counter.css';
 import routes from '../constants/routes';
 
-type Props = {
-  increment: () => void,
-  incrementIfOdd: () => void,
-  incrementAsync: () => void,
-  decrement: () => void,
-  counter: number
+const graphOptions = {
+    layout: {
+        hierarchical: true
+    },
+    edges: {
+        color: "#000000"
+    }
 };
 
-export default class Counter extends Component<Props> {
-  props: Props;
 
+class Counter extends Component<Props> {
   render() {
     const {
-      increment,
-      incrementIfOdd,
-      incrementAsync,
-      decrement,
+      dependencyTree,
+      getDotGraph,
       counter
     } = this.props;
+
+    const hasNodes = dependencyTree.nodes.length > 0;
+    console.log(dependencyTree.node);
+
     return (
       <div>
         <div className={styles.backButton} data-tid="backButton">
@@ -31,10 +35,22 @@ export default class Counter extends Component<Props> {
           </Link>
         </div>
 
+        {hasNodes &&
+          <div
+            className={styles.graphContainer}
+          >
+            <Graph
+            graph={dependencyTree}
+            options={graphOptions}
+          />
+
+
+        </div>
+        }
         <div className={styles.btnGroup}>
           <button
             className={styles.btn}
-            onClick={() => incrementAsync()}
+            onClick={() => getDotGraph()}
             data-tclass="btn"
             type="button"
           >
@@ -45,3 +61,5 @@ export default class Counter extends Component<Props> {
     );
   }
 }
+
+export default Counter;

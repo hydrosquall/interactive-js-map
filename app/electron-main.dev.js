@@ -22,8 +22,8 @@ function createWindow(socketName) {
   console.log("Making Client Window");
   clientWin = new BrowserWindow({
     show: false,
-    width: 800,
-    height: 600,
+    width: 1300,
+    height: 900,
     webPreferences: {
       // nodeIntegration: false, // needed for having process.env for hot-reloading
       preload: path.join(__dirname ,'client-preload.js'),
