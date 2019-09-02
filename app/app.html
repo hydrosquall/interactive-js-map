@@ -20,7 +20,6 @@
     <script>
       {
         const scripts = [];
-
         // Dynamically insert the DLL script in development env in the
         // renderer process
         if (process.env.NODE_ENV === 'development') {
@@ -40,6 +39,16 @@
             .map(script => `<script defer src="${script}"><\/script>`)
             .join('')
         );
+      }
+    </script>
+    <!-- Node IPC content from James Long Tutorial-->
+    <script src="./ipc-client/client-ipc.js"></script>
+    <script>
+      if(!IS_DEV) {
+        var tag = document.createElement('meta');
+        tag.setAttribute("http-equiv", "Content-Security-Policy");
+        tag.setAttribute("content", "default-src 'self'; style-src 'self' 'unsafe-inline';")
+        document.head.appendChild(tag)
       }
     </script>
   </body>
