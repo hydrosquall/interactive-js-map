@@ -60,7 +60,10 @@ const configureStore = (initialState?: counterStateType) => {
     module.hot.accept(
       '../reducers',
       // eslint-disable-next-line global-require
-      () => store.replaceReducer(require('../reducers').default)
+      () => {
+        const nextCreateRootReducer = require('../reducers').default;
+        store.replaceReducer(nextCreateRootReducer(history));
+      }
     );
   }
 

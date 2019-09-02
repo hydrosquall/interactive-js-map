@@ -1,6 +1,8 @@
+
+
+// react-hot-loader needs to be listed before react/react-dom in webpack.
 import React from 'react';
 import { render } from 'react-dom';
-import { AppContainer } from 'react-hot-loader';
 import Root from './containers/Root';
 import { configureStore, history } from './store/configureStore';
 
@@ -10,15 +12,12 @@ import { init } from './ipc-client/client-ipc';
 
 import './app.global.css';
 
-
 const store = configureStore();
 
 init();
 
 render(
-  <AppContainer>
-    <Root store={store} history={history} />
-  </AppContainer>,
+  <Root store={store} history={history} />,
   document.getElementById('root')
 );
 
