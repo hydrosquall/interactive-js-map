@@ -11,7 +11,9 @@
  * @flow
  */
 import { app, BrowserWindow } from 'electron';
+// import madge from 'madge';
 // import log from 'electron-log';
+
 import MenuBuilder from './menu';
 
 let mainWindow = null;
