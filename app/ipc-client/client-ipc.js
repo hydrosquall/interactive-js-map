@@ -2,14 +2,12 @@
 // https://github.com/jlongster/electron-with-server-example
 // eslint-disable
 // Init
-async function init() {
+export async function init() {
   const socketName = await window.getServerSocket()
   connectSocket(socketName, () => {
-    console.log('Connected!')
+    console.log('IPC Client Connected!')
   })
 }
-
-init()
 
 // State
 const replyHandlers = new Map()
@@ -67,9 +65,9 @@ function connectSocket(name, onOpen) {
   })
 }
 
-// If this gets more complicated, move these off the global window and use some sort of redux async middleware to help.
+// If this gets more complicated, move these off module namespace, window and use some sort of redux async middleware to help.
 // Currently complicated by the window.uuid and global messageQueue.
-function send(name, args) {
+export function send(name, args) {
   return new Promise((resolve, reject) => {
     let id = window.uuid.v4()
     replyHandlers.set(id, { resolve, reject })

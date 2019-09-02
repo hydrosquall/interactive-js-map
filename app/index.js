@@ -3,9 +3,17 @@ import { render } from 'react-dom';
 import { AppContainer } from 'react-hot-loader';
 import Root from './containers/Root';
 import { configureStore, history } from './store/configureStore';
+
+// IPC Communication goes first.
+// Node IPC content from James Long Tutorial
+import { init } from './ipc-client/client-ipc';
+
 import './app.global.css';
 
+
 const store = configureStore();
+
+init();
 
 render(
   <AppContainer>
