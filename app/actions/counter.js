@@ -1,10 +1,5 @@
-// @flow
+
 // Help from the backend
-import { ipcRenderer } from 'electron';
-
-import type { GetState, Dispatch } from '../reducers/types';
-
-
 export const INCREMENT_COUNTER = 'INCREMENT_COUNTER';
 export const DECREMENT_COUNTER = 'DECREMENT_COUNTER';
 
@@ -21,7 +16,7 @@ export function decrement() {
 }
 
 export function incrementIfOdd() {
-  return (dispatch: Dispatch, getState: GetState) => {
+  return (dispatch, getState) => {
     const { counter } = getState();
 
     if (counter % 2 === 0) {
@@ -33,12 +28,12 @@ export function incrementIfOdd() {
 }
 
 export function incrementAsync(delay: number = 1000) {
-  return async (dispatch: Dispatch) => {
-      console.log("Async Bump");
-      ipcRenderer.send('runMadge', { absPath: '/Users/cameron/Projects/open-source/d3-quadtree/src/index.js'});
-
-      // Temporary: global window.send
-      const result = await window.send('make-factorial', { num: 5 });
+  return async (dispatch) => {
+      // Temporary: global window.send to the node-ipc dispatcher
+      // because we can't import "send" b/c of something in webpack.
+      // https://github.com/webpack/webpack/issues/4039
+      const result = await window.send('get-file-dependency-tree',
+                                       { absPath: '/Users/cameron/Projects/open-source/d3-quadtree/src/index.js'});
 
       console.log(result)
       dispatch(increment());

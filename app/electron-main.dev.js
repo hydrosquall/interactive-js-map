@@ -4,7 +4,6 @@ import path from 'path';
 import { app, BrowserWindow, ipcMain } from 'electron';
 import { fork } from 'child_process';
 
-import madge from 'madge';
 import isDev from 'electron-is-dev';
 // import log from 'electron-log';
 
@@ -18,7 +17,6 @@ installTooling();
 let clientWin;
 let serverWin;
 let serverProcess;
-let serverSocket;
 
 function createWindow(socketName) {
   console.log("Making Client Window");
@@ -35,7 +33,7 @@ function createWindow(socketName) {
 
   clientWin.webContents.on('did-finish-load', () => {
     clientWin.webContents.send('set-socket', {
-      name: serverSocket
+      name: socketName
     })
   })
 }
@@ -78,7 +76,7 @@ app.on('ready', async () => {
     await installExtensions();
   }
 
-  serverSocket = await findOpenSocket();
+  const serverSocket = await findOpenSocket();
   createWindow(serverSocket)
 
   // @TODO: Use 'ready-to-show' event
@@ -128,23 +126,4 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
-});
-
-// My API.
-ipcMain.on('runMadge', async (event, payload) => {
-  console.log('running madge');
-  console.log({ payload, event });
-
-  // get relative path to current location
-  const absPath = payload.absPath;
-  const relativePath = path.relative(process.env.PWD, absPath)
-
-  madge(relativePath)
-    .then(res => res.dot())
-    .then(res => console.log(res))
-    .catch(error => {
-      console.log(error);
-    })
-    ;
-    // Send payload back to the frontend
 });

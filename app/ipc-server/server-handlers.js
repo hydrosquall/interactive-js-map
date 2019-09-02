@@ -1,4 +1,8 @@
-// https://github.com/jlongster/electron-with-server-example/blob/master/server-handlers.js
+
+const madge = require('madge');
+const path = require('path');
+
+// Based on https://github.com/jlongster/electron-with-server-example/blob/master/server-handlers.js
 const handlers = {}
 
 handlers._history = []
@@ -20,6 +24,23 @@ handlers['make-factorial'] = async ({ num }) => {
 handlers['ring-ring'] = async () => {
   console.log('picking up the phone')
   return 'hello!'
+}
+
+handlers['get-file-dependency-tree'] = async (payload) => {
+  console.log('running madge');
+
+  // get relative path to current location
+  const absPath = payload.absPath;
+  const relativePath = path.relative(process.env.PWD, absPath)
+
+  let result = await madge(relativePath)
+    .then(res => res.dot())
+    .catch(error => {
+      console.log(error);
+    })
+    ;
+
+  return result;
 }
 
 module.exports = handlers
