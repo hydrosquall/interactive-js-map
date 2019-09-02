@@ -3,7 +3,6 @@ import { send } from '../../ipc-client/client-ipc';
 // Help from the backend
 export const SET_DOT_GRAPH = 'SET_DOT_GRAPH'; // load data in DOT string format
 
-const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
 
 export function setDotGraph(dotGraph) {
   return {
@@ -14,9 +13,9 @@ export function setDotGraph(dotGraph) {
   };
 }
 
-export function getDotGraph(filepath = DEFAULT_PATH) {
+export function getDotGraph(filepath) {
   return async (dispatch) => {
-      // TODO: send a serialized object if it's more convenient...
+      // TODO: send serialized object if it's more convenient instead of dotString...
       const dependencyTreeAsDotString = await send('get-file-dependency-tree', { absPath: filepath });
       dispatch(setDotGraph(dependencyTreeAsDotString));
   };

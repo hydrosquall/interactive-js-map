@@ -27,7 +27,7 @@ handlers['ring-ring'] = async () => {
 }
 
 handlers['get-file-dependency-tree'] = async (payload) => {
-  console.log('running madge');
+  console.log('Generating Madge Dependency Tree');
 
   // get relative path to current location
   const absPath = payload.absPath;
@@ -35,7 +35,7 @@ handlers['get-file-dependency-tree'] = async (payload) => {
 
   let result = await madge(relativePath)
     .then(res => {
-      console.log(res)
+      // console.log(res)
       return res;
     })
     .then(res => res.dot())
