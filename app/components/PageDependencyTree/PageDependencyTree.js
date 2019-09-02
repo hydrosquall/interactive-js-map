@@ -1,14 +1,12 @@
 import React, { Component } from 'react';
-import { Link } from 'react-router-dom';
 import Graph from 'react-graph-vis';
 import * as dg from 'dis-gui';
 
+import { remote } from 'electron';
 
-const { dialog } = require('electron').remote; // browse the filesystem!
+import styles from './page-dependency-tree.css';
 
-
-import styles from './Counter.css';
-import routes from '../constants/routes';
+const { dialog } = remote; // browse the filesystem
 
 const graphOptions = {
     layout: {
@@ -19,40 +17,31 @@ const graphOptions = {
     }
 };
 
+class PageDependencyTree extends Component<Props> {
 
-class Counter extends Component<Props> {
-
-  handleOpenFile = () => {
-    console.log({dialog});
-    const promise = dialog.showOpenDialog({ properties: ['openFile', 'openDirectory'] });
-    console.log({promise});
-    promise.then(payload => {
-            const { canceled, filePaths, bookmarks} = payload;
-            if (canceled) {
-              return;
-            }
-            console.log(filePaths);
-          })
+  // Note: on windows or linux, a dialog is only allowed to open one, not both
+  // As a result, that would lead to just opening a directory dialogy.
+  handleOpenFileOrDirectory = () => {
+    dialog.showOpenDialog({ properties: ['openFile', 'openDirectory'] }).then(payload => {
+      const { canceled, filePaths, bookmarks} = payload;
+      if (canceled) {
+        return;
+      }
+      console.log({filePaths});
+    });
   }
 
 
   render() {
+    console.log('props', this.props);
     const {
       dependencyTree,
-      getDotGraph,
-      counter
+      getDotGraph
     } = this.props;
-
-    const hasNodes = dependencyTree.nodes.length > 0;
+    const hasNodes = dependencyTree && dependencyTree.nodes.length > 0;
 
     return (
       <div>
-        <div className={styles.backButton} data-tid="backButton">
-          <Link to={routes.HOME}>
-            <i className="fa fa-arrow-left fa-3x" />
-          </Link>
-        </div>
-
         <dg.GUI>
           <dg.Text label='Text' value='Hello world!'/>
           <dg.Number label='Number' value={65536}/>
@@ -91,7 +80,7 @@ class Counter extends Component<Props> {
           </button>
           <button
             className={styles.btn}
-            onClick={this.handleOpenFile}
+            onClick={this.handleOpenFileOrDirectory}
             type="button"
           >
             Select File
@@ -102,4 +91,4 @@ class Counter extends Component<Props> {
   }
 }
 
-export default Counter;
+export default PageDependencyTree;
