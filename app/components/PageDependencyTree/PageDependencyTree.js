@@ -10,18 +10,12 @@ const { dialog } = remote; // Open file dialog
 
 // Placeholder
 const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
-const graphOptions = {
-  layout: {
-    hierarchical: false
-  },
-  edges: {
-    color: '#000000'
-  }
-};
+
 
 const PageDependencyTree = props => {
 
   const [ filePath, setFilePath ] = useState(DEFAULT_PATH);
+  const [isHierarchical, setIsHierarchical ] = useState(false);
 
   const handleOpenFileOrDirectory = useCallback(
     () => {
@@ -48,20 +42,30 @@ const PageDependencyTree = props => {
     [filePath]
   );
 
+  const handleToggleHierarchy = useCallback(
+    (event) => {
+      setIsHierarchical(event);
+    },
+    [setIsHierarchical]
+  );
+
   const { dependencyTree, getDotGraph } = props;
   const hasNodes = dependencyTree && dependencyTree.nodes.length > 0;
 
-  return (
-    <div>
+  const graphOptions = { layout: { hierarchical: isHierarchical }, edges: { color: '#000000' } };
+
+  console.log({ isHierarchical });
+  return <div>
+      <div className={styles.graphContainer}>
+        {hasNodes && <Graph graph={dependencyTree} options={graphOptions} />}
+      </div>
+
       <dg.GUI>
         <dg.Text label="Text" value="Hello world!" />
         <dg.Number label="Number" value={65536} />
         <dg.Number label="Range" value={512} min={-1024} max={1024} step={64} />
-        <dg.Checkbox label="Checkbox" checked={true} />
-        <dg.Select
-          label="Select"
-          options={['Option one', 'Option two', 'Option three']}
-        />
+        <dg.Checkbox label="Use Hierarchy" checked={isHierarchical} onChange={handleToggleHierarchy} />
+        <dg.Select label="Select" options={['Option one', 'Option two', 'Option three']} />
         <dg.Button label="Button" />
         <dg.Folder label="Folder" expanded={true}>
           <dg.Text label="Text" value="Hello folder!" />
@@ -73,29 +77,15 @@ const PageDependencyTree = props => {
         </dg.Folder>
       </dg.GUI>
 
-      <div className={styles.graphContainer}>
-        {hasNodes && <Graph graph={dependencyTree} options={graphOptions} />}
-      </div>
-
       <div className={styles.btnGroup}>
-        <button
-          className={styles.btn}
-          onClick={handleFetchTree}
-          data-tclass="btn"
-          type="button"
-        >
+        <button className={styles.btn} onClick={handleFetchTree} data-tclass="btn" type="button">
           Fetch Graph
         </button>
-        <button
-          className={styles.btn}
-          onClick={handleOpenFileOrDirectory}
-          type="button"
-        >
+        <button className={styles.btn} onClick={handleOpenFileOrDirectory} type="button">
           Select File
         </button>
       </div>
-    </div>
-  );
+    </div>;
 };
 
 export default PageDependencyTree;
