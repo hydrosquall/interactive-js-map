@@ -3,7 +3,7 @@ import { send } from '../../ipc-client/client-ipc';
 // Help from the backend
 export const SET_DOT_GRAPH = 'SET_DOT_GRAPH'; // load data in DOT string format
 
-const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src/index.js';
+const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
 
 export function setDotGraph(dotGraph) {
   return {

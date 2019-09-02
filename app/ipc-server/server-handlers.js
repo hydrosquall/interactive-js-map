@@ -34,6 +34,10 @@ handlers['get-file-dependency-tree'] = async (payload) => {
   const relativePath = path.relative(process.env.PWD, absPath)
 
   let result = await madge(relativePath)
+    .then(res => {
+      console.log(res)
+      return res;
+    })
     .then(res => res.dot())
     .catch(error => {
       console.log(error);

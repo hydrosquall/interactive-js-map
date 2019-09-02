@@ -25,7 +25,7 @@ function createWindow(socketName) {
     width: 1300,
     height: 900,
     webPreferences: {
-      // nodeIntegration: false, // needed for having process.env for hot-reloading
+      nodeIntegration: true, // needed for having process.env for hot-reloading
       preload: path.join(__dirname ,'client-preload.js'),
     }
   })
@@ -123,7 +123,8 @@ app.on('before-quit', () => {
 app.on('window-all-closed', () => {
   // Respect the OSX convention of having the application in memory even
   // after all windows have been closed
-  if (process.platform !== 'darwin') {
-    app.quit();
-  }
+  // if (process.platform !== 'darwin') {
+  //   app.quit();
+  // }
+  app.quit();
 });
