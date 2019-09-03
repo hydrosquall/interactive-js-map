@@ -13,7 +13,9 @@ import Routes from '../Routes';
 
 const theme = createMuiTheme({
   palette: {
-    primary: blueGrey,
+    primary: {
+      main: green[800] // intense green
+    },
     secondary: green
   },
   status: {

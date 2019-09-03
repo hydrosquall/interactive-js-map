@@ -66,7 +66,7 @@ const PageDependencyTree = props => {
 
   const ControlPanel = () => <dg.GUI style={{ bottom: '0px', right: '0px', controlWidth: 400 }}>
       <dg.Folder label="Data" expanded={true}>
-        <dg.Text label="Filepath" value={filePath} onChange={handleSetFilepath} />
+        <dg.Text label="Filepath" value={filePath} onFinishChange={handleSetFilepath} />
       </dg.Folder>
 
       <dg.Folder label="Graph Settings" expanded={true}>
