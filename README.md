@@ -24,3 +24,7 @@ This project was made tractable by the shoulders of several community projects, 
     - Bumped to latest react/redux/react-redux/react-router/connected-react router
 - Dependency parsing + formatting by `madge`
 - `visjs` and/or `cytoscape`
+
+## Next steps
+
+- Used Blueprint/Semantic-ui last time, try Antd or material components this time?

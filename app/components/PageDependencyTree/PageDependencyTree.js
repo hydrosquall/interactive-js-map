@@ -2,20 +2,24 @@ import React, { useCallback, useState } from 'react';
 import Graph from 'react-graph-vis';
 import * as dg from 'dis-gui';
 
+
 import { remote } from 'electron';
 
+import { PrimaryAppBar } from './Toolbar';
+
 import styles from './page-dependency-tree.css';
+
 
 const { dialog } = remote; // Open file dialog
 
 // Placeholder
 const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
 
-
 const PageDependencyTree = props => {
 
-  const [ filePath, setFilePath ] = useState(DEFAULT_PATH);
+  const [filePath, setFilePath ] = useState(DEFAULT_PATH);
   const [isHierarchical, setIsHierarchical ] = useState(false);
+  const [isDrawerVisible, setIsDrawerVisible ] = useState(false);
 
   const handleOpenFileOrDirectory = useCallback(
     () => {
@@ -35,56 +39,58 @@ const PageDependencyTree = props => {
     [setFilePath]
   );
 
+  // All the cached callbacks
   const handleFetchTree = useCallback(
     () => {
       getDotGraph(filePath);
     },
     [filePath]
   );
-
   const handleToggleHierarchy = useCallback(
     (event) => {
       setIsHierarchical(event);
     },
     [setIsHierarchical]
   );
+  const handleSetFilepath = useCallback(
+    filepath => {
+      setFilePath(filepath);
+    },
+    [setFilePath]
+  );
 
   const { dependencyTree, getDotGraph } = props;
   const hasNodes = dependencyTree && dependencyTree.nodes.length > 0;
 
-  const graphOptions = { layout: { hierarchical: isHierarchical }, edges: { color: '#000000' } };
+  const visJsGraphOptions = { layout: { hierarchical: isHierarchical }, edges: { color: '#000000' } };
 
-  console.log({ isHierarchical });
-  return <div>
-      <div className={styles.graphContainer}>
-        {hasNodes && <Graph graph={dependencyTree} options={graphOptions} />}
-      </div>
+  const ControlPanel = () => <dg.GUI style={{ bottom: '0px', right: '0px', controlWidth: 400 }}>
+      <dg.Folder label="Data" expanded={true}>
+        <dg.Text label="Filepath" value={filePath} onChange={handleSetFilepath} />
+      </dg.Folder>
 
-      <dg.GUI>
-        <dg.Text label="Text" value="Hello world!" />
-        <dg.Number label="Number" value={65536} />
-        <dg.Number label="Range" value={512} min={-1024} max={1024} step={64} />
-        <dg.Checkbox label="Use Hierarchy" checked={isHierarchical} onChange={handleToggleHierarchy} />
-        <dg.Select label="Select" options={['Option one', 'Option two', 'Option three']} />
-        <dg.Button label="Button" />
-        <dg.Folder label="Folder" expanded={true}>
-          <dg.Text label="Text" value="Hello folder!" />
-          <dg.Number label="Number" value={2} />
-          <dg.Folder label="Subfolder" expanded={true}>
-            <dg.Text label="Text" value="Hello subfolder!" />
-            <dg.Number label="Number" value={2} />
-          </dg.Folder>
+      <dg.Folder label="Graph Settings" expanded={true}>
+        <dg.Folder label="Layout" expanded={true}>
+          <dg.Checkbox label="Use Hierarchy" checked={isHierarchical} onChange={handleToggleHierarchy} />
+          <dg.Select label="Select" options={['Option one', 'Option two', 'Option three']} />
+          <dg.Button label="Button" />
         </dg.Folder>
-      </dg.GUI>
+      </dg.Folder>
+    </dg.GUI>;
 
-      <div className={styles.btnGroup}>
-        <button className={styles.btn} onClick={handleFetchTree} data-tclass="btn" type="button">
-          Fetch Graph
-        </button>
-        <button className={styles.btn} onClick={handleOpenFileOrDirectory} type="button">
-          Select File
-        </button>
+  const appBarProps = {
+    handleOpenFileClick: handleOpenFileOrDirectory,
+    fetchTree: handleFetchTree
+  };
+
+  return <div>
+      <PrimaryAppBar {...appBarProps}/>
+      <div className={styles.graphContainer}>
+        {hasNodes && (
+          <Graph graph={dependencyTree} options={visJsGraphOptions} />
+        )}
       </div>
+      <ControlPanel></ControlPanel>
     </div>;
 };
 

@@ -1,7 +1,7 @@
 // https://github.com/jlongster/electron-with-server-example
 const ipc = require('node-ipc');
 
-const APP_ID = 'interactive-code-map';
+const APP_ID = 'interactiveCodeMap';
 function isSocketTaken(name, fn) {
   return new Promise((resolve, reject) => {
     ipc.connectTo(name, () => {
@@ -20,12 +20,12 @@ function isSocketTaken(name, fn) {
 
 async function findOpenSocket() {
   let currentSocket = 1;
-  console.log('checking socket', currentSocket);
+  console.log('Checking socket', currentSocket);
   while (await isSocketTaken(APP_ID + currentSocket)) {
     currentSocket++;
     console.log('checking next socket', currentSocket);
   }
-  console.log(`found socket ${currentSocket}`);
+  console.log(`Matched socket ${currentSocket}`);
   return APP_ID + currentSocket;
 }
 
