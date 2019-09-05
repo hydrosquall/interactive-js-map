@@ -30,10 +30,15 @@ handlers['get-file-dependency-tree'] = async (payload) => {
   console.log('Generating Madge Dependency Tree');
 
   // get relative path to current location
-  const absPath = payload.absPath;
+  const { absPath, webpackConfig } = payload;
   const relativePath = path.relative(process.env.PWD, absPath)
 
-  let result = await madge(relativePath)
+  const config = {};
+  if (webpackConfig) {
+    config.webpackConfig = webpackConfig;
+  }
+
+  let result = await madge(relativePath, config)
     .then(res => {
       // console.log(res)
       return res;

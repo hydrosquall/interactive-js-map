@@ -44,6 +44,7 @@ const hierarchyReducer = (state, action) => {
 const PageDependencyTree = props => {
 
   const [filePath, setFilePath ] = useState(DEFAULT_PATH);
+  const [webpackConfig, setWebpackConfig] = useState(null);
   const [isHierarchical, setIsHierarchical ] = useState(false);
   const [isDrawerVisible, setIsDrawerVisible ] = useState(false);
 
@@ -70,9 +71,9 @@ const PageDependencyTree = props => {
   // All the cached callbacks
   const handleFetchTree = useCallback(
     () => {
-      getDotGraph(filePath);
+      getDotGraph(filePath, webpackConfig);
     },
-    [filePath]
+    [filePath, webpackConfig]
   );
   const handleToggleHierarchy = useCallback(
     (event) => {
@@ -85,6 +86,12 @@ const PageDependencyTree = props => {
       setFilePath(filepath);
     },
     [setFilePath]
+  );
+  const handleSetWebpackConfig= useCallback(
+    config => {
+      setWebpackConfig(config);
+    },
+    [setWebpackConfig]
   );
 
   // TODO: figure out how to only run this once with hooks. UseEffect doesn't work.
@@ -117,6 +124,7 @@ const PageDependencyTree = props => {
   const ControlPanel = () => <dg.GUI style={guiStyle}>
       <dg.Folder label="Data Settings" expanded={true}>
         <dg.Text label="Filepath" value={filePath} onFinishChange={handleSetFilepath} />
+        <dg.Text label="webpack path" value={webpackConfig} onFinishChange={handleSetWebpackConfig} />
       </dg.Folder>
 
       <dg.Folder label="Graph Settings" expanded={true}>

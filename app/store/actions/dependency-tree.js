@@ -13,10 +13,10 @@ export function setDotGraph(dotGraph) {
   };
 }
 
-export function getDotGraph(filepath) {
+export function getDotGraph(filepath, webpackConfig) {
   return async (dispatch) => {
       // TODO: send serialized object if it's more convenient instead of dotString...
-      const dependencyTreeAsDotString = await send('get-file-dependency-tree', { absPath: filepath });
+      const dependencyTreeAsDotString = await send('get-file-dependency-tree', { absPath: filepath, webpackConfig });
       dispatch(setDotGraph(dependencyTreeAsDotString));
   };
 }
