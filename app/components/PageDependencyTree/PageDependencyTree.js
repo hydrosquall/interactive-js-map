@@ -2,7 +2,6 @@ import React, { useCallback, useState, useReducer, useEffect } from 'react';
 import Graph from 'react-graph-vis';
 import * as dg from 'dis-gui';
 
-
 import { remote } from 'electron';
 
 import { PrimaryAppBar } from './Toolbar';
@@ -109,36 +108,48 @@ const PageDependencyTree = props => {
     );
   });
 
-  const { dependencyTree, getDotGraph } = props;
+  const { dependencyTree, getDotGraph, networkXGraph } = props;
   const hasNodes = dependencyTree && dependencyTree.nodes.length > 0;
-  const visJsGraphOptions = { layout: { hierarchical: isHierarchical && hierarchyState }, edges: { color: '#000000' } };
+  const visJsGraphOptions = {
+    layout: { hierarchical: isHierarchical && hierarchyState },
+    edges: { color: '#000000' },
+    nodes: {
+      shape: 'box',
+      // widthConstraint: 20
+    },
+    // interaction: {
+    //   hover: true,
+    // }
+  };
 
   const guiStyle = {
     bottom: '0px',
     right: '0px',
     controlWidth: 400,
     font: '14px Roboto, sans-serif',
-    label: { fontColor: '#eeeeee' }
+    label: {
+      fontColor: '#eeeeee'
+    }
   };
 
   const ControlPanel = () => <dg.GUI style={guiStyle}>
-      <dg.Folder label="Data Settings" expanded={true}>
+      <dg.Folder label="Data Settings" expanded>
         <dg.Text label="Filepath" value={filePath} onFinishChange={handleSetFilepath} />
         <dg.Text label="webpack path" value={webpackConfig} onFinishChange={handleSetWebpackConfig} />
       </dg.Folder>
 
-      <dg.Folder label="Graph Settings" expanded={true}>
-        <dg.Folder label="Layout" expanded={true}>
+      <dg.Folder label="Graph Settings" expanded>
+        <dg.Folder label="Layout" expanded>
           <dg.Checkbox label="Use Hierarchy" checked={isHierarchical} onChange={handleToggleHierarchy} />
           {isHierarchical && <dg.Folder label="Hierarchy Options" expanded={isHierarchical}>
-              <dg.Select label="direction" options={['UD', 'DU', 'LR', 'LR']} value={hierarchyState.direction} onChange={handleSetHierarchyProp['direction']} />
-              <dg.Select label="sortMethod" options={['directed', 'hubsize']} value={hierarchyState.sortMethod} onChange={handleSetHierarchyProp['sortMethod']} />
-              <dg.Checkbox label="blockShifting" checked={hierarchyState.blockShifting} onChange={handleSetHierarchyProp['blockShifting']} />
-              <dg.Checkbox label="edgeMinimization" checked={hierarchyState.edgeMinimization} onChange={handleSetHierarchyProp['edgeMinimization']} />
-              <dg.Checkbox label="parentCentralization" checked={hierarchyState.parentCentralization} onChange={handleSetHierarchyProp['parentCentralization']} />
-              <dg.Number label="levelSeparation" value={hierarchyState.levelSeparation} min={0} max={200} step={1} onFinishChange={handleSetHierarchyProp['levelSeparation']} />
-              <dg.Number label="nodeSpacing" value={hierarchyState.nodeSpacing} min={0} max={300} step={1} onFinishChange={handleSetHierarchyProp['nodeSpacing']} />
-              <dg.Number label="treeSpacing" value={hierarchyState.treeSpacing} min={0} max={300} step={1} onFinishChange={handleSetHierarchyProp['treeSpacing']} />
+              <dg.Select label="direction" options={['UD', 'DU', 'LR', 'LR']} value={hierarchyState.direction} onChange={handleSetHierarchyProp.direction} />
+              <dg.Select label="sortMethod" options={['directed', 'hubsize']} value={hierarchyState.sortMethod} onChange={handleSetHierarchyProp.sortMethod} />
+              <dg.Checkbox label="blockShifting" checked={hierarchyState.blockShifting} onChange={handleSetHierarchyProp.blockShifting} />
+              <dg.Checkbox label="edgeMinimization" checked={hierarchyState.edgeMinimization} onChange={handleSetHierarchyProp.edgeMinimization} />
+              <dg.Checkbox label="parentCentralization" checked={hierarchyState.parentCentralization} onChange={handleSetHierarchyProp.parentCentralization} />
+              <dg.Number label="levelSeparation" value={hierarchyState.levelSeparation} min={0} max={200} step={1} onFinishChange={handleSetHierarchyProp.levelSeparation} />
+              <dg.Number label="nodeSpacing" value={hierarchyState.nodeSpacing} min={0} max={300} step={1} onFinishChange={handleSetHierarchyProp.nodeSpacing} />
+              <dg.Number label="treeSpacing" value={hierarchyState.treeSpacing} min={0} max={300} step={1} onFinishChange={handleSetHierarchyProp.treeSpacing} />
             </dg.Folder>}
         </dg.Folder>
       </dg.Folder>
@@ -149,14 +160,28 @@ const PageDependencyTree = props => {
     fetchTree: handleFetchTree
   };
 
+  const events = { select(event) {
+      const { nodes, edges } = event;
+
+      console.log(networkXGraph);
+
+      // networkXGraph;
+    } };
+
   return <div>
-      <PrimaryAppBar {...appBarProps}/>
+      <PrimaryAppBar
+        {...appBarProps}
+      />
       <div className={styles.graphContainer}>
         {hasNodes && (
-          <Graph graph={dependencyTree} options={visJsGraphOptions} />
+          <Graph
+            graph={dependencyTree}
+            options={visJsGraphOptions}
+            events={events}
+          />
         )}
       </div>
-      <ControlPanel></ControlPanel>
+      <ControlPanel />
     </div>;
 };
 

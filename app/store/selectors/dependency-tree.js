@@ -1,6 +1,8 @@
 import { createSelector } from 'reselect';
 import { network } from 'vis-network';
 
+import { DiGraph } from 'jsnetworkx';
+
 import { DEPENDENCY_TREE_REDUCER_KEY } from '../constants';
 
 // Suffix all selectors with $ instead of writing "selector"
@@ -21,13 +23,27 @@ export const visNetworkGraph$ = createSelector(
         nodes: [],
         edges: []
       }
-    } else {
-      return network.convertDot(dotString)
     }
+      const graph = network.convertDot(dotString);
+      return {
+        nodes: graph.nodes, //.map(node => ({...node })),
+        edges: graph.edges
+      };
+
   }
 );
 
+export const networkXGraph$ = createSelector( visNetworkGraph$, graph => {
+  const digraph = new DiGraph();
+  const networkXEdges = graph.edges.map(edge => [edge.from, edge.to]);
+  digraph.addNodesFrom(graph.nodes.map(node => node.id));
+  digraph.addEdgesFrom(networkXEdges);
+
+  return digraph;
+});
+
 export default {
   dotGraph$,
-  visNetworkGraph$
+  visNetworkGraph$,
+  networkXGraph$
 }

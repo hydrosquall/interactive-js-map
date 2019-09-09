@@ -2,12 +2,17 @@ import { connect } from 'react-redux';
 
 // Redux machinery
 import { getDotGraph } from '../../store/actions/dependency-tree';
-import { visNetworkGraph$, dotGraph$ } from '../../store/selectors/dependency-tree';
+import {
+  visNetworkGraph$,
+  dotGraph$,
+  networkXGraph$
+} from '../../store/selectors/dependency-tree';
 
 import PageDependencyTree from './PageDependencyTree';
 
 const mapStateToProps = (state) => ({
-  dependencyTree: visNetworkGraph$(state)
+  dependencyTree: visNetworkGraph$(state),
+  networkXGraph: networkXGraph$(state)
 })
 
 const mapDispatchToProps = {
