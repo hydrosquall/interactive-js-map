@@ -7,6 +7,7 @@ import { createLogger } from 'redux-logger';
 import createRootReducer from './reducers';
 import * as counterActions from './actions/counter';
 import * as dependencyTreeActions from './actions/dependency-tree';
+import * as fileTreeActions from './actions/file-tree';
 
 import type { counterStateType } from './reducers/types';
 
@@ -41,7 +42,8 @@ const configureStore = (initialState?: counterStateType) => {
   const actionCreators = {
     ...counterActions,
     ...routerActions,
-    ...dependencyTreeActions
+    ...dependencyTreeActions,
+    ...fileTreeActions
   };
   // If Redux DevTools Extension is installed use it, otherwise use Redux compose
   /* eslint-disable no-underscore-dangle */

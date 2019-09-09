@@ -1,6 +1,7 @@
 
 const madge = require('madge');
 const path = require('path');
+const directoryTree = require('directory-tree');
 
 // Based on https://github.com/jlongster/electron-with-server-example/blob/master/server-handlers.js
 const handlers = {}
@@ -51,5 +52,17 @@ handlers['get-file-dependency-tree'] = async (payload) => {
 
   return result;
 }
+
+handlers['get-directory-tree'] = async (payload) => {
+  console.log('getting directory structure as a tree');
+
+  // get relative path to current location
+  const { absPath } = payload;
+  const relativePath = path.relative(process.env.PWD, absPath);
+
+  const tree = directoryTree(relativePath);
+
+  return tree;
+};
 
 module.exports = handlers

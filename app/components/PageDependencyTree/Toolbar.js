@@ -1,5 +1,6 @@
 import React from 'react';
 import { remote } from 'electron';
+import { Link } from 'react-router-dom';
 
 import AppBar from '@material-ui/core/AppBar';
 import IconButton from '@material-ui/core/IconButton';
@@ -9,8 +10,11 @@ import { fade, makeStyles } from '@material-ui/core/styles';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import FolderOpen from '@material-ui/icons/FolderOpen';
+// import MenuIcon from '@material-ui/icons/MenuIcon';
 import Loop from '@material-ui/icons/Loop';
 import SettingsApplications from '@material-ui/icons/SettingsApplications';
+
+import routes from '../../constants/routes';
 
 
 const { dialog } = remote; // Open file dialog
@@ -89,18 +93,12 @@ export function PrimaryAppBar(props) {
     setAnchorEl(event.currentTarget);
   }
 
-  function handleMobileMenuClose() {
-    setMobileMoreAnchorEl(null);
-  }
 
   function handleMenuClose() {
     setAnchorEl(null);
     handleMobileMenuClose();
   }
 
-  function handleMobileMenuOpen(event) {
-    setMobileMoreAnchorEl(event.currentTarget);
-  }
 
   const menuId = 'primary-search-account-menu';
   const renderMenu = (
@@ -122,12 +120,21 @@ export function PrimaryAppBar(props) {
   return <div className={classes.grow}>
       <AppBar position="static">
         <Toolbar>
-          {/* <IconButton edge="start" className={classes.menuButton} color="inherit" aria-label="open drawer">
+          {/* <IconButton
+              edge="start"
+              className={classes.menuButton} color="inherit" aria-label="open drawer">
             <MenuIcon />
           </IconButton> */}
           <Typography className={classes.title} variant="h6" noWrap>
-            JS Map
+            <Link to={routes.HOME}>Dependencies</Link>
           </Typography>
+          <div style={{width: 10}}>
+
+          </div>
+          <Typography className={classes.title} variant="h6" noWrap>
+            <Link to={routes.FILETREE} >FileTree</Link>
+          </Typography>
+
           {/* <div className={classes.search}>
             <div className={classes.searchIcon}>
               <SearchIcon />
@@ -142,9 +149,9 @@ export function PrimaryAppBar(props) {
             <IconButton onClick={props.handleOpenFileClick} color="inherit">
               <FolderOpen />
             </IconButton>
-            <IconButton edge="end" onClick={handleProfileMenuOpen} color="inherit">
+            {/* <IconButton edge="end" onClick={handleProfileMenuOpen} color="inherit">
               <SettingsApplications />
-            </IconButton>
+            </IconButton> */}
           </div>
         </Toolbar>
       </AppBar>
