@@ -2,7 +2,11 @@ import React, { useCallback, useState, useReducer, useEffect } from 'react';
 import Graph from 'react-graph-vis';
 import * as dg from 'dis-gui';
 import SplitPane from 'react-split-pane';
-
+import Typography from '@material-ui/core/Typography';
+import red from '@material-ui/core/colors/red';
+import blue from '@material-ui/core/colors/blue';
+import green from '@material-ui/core/colors/green';
+import grey from '@material-ui/core/colors/grey';
 
 import { remote } from 'electron';
 
@@ -16,15 +20,18 @@ const { dialog } = remote; // Open file dialog
 // Placeholder
 const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
 const DEFAULT_MAP_FRACTION = 0.5;
+const DEFAULT_NODE_COLOR = blue[100];
+const SELECTED_NODE_COLOR = red[100];
+const SELECTED_NODE_OUTLINE = red[500];
 
 // Mini reducer
 const SET_HIERARCHY_PROPERTY = 'SET_HIERARCHY_PROPERTY';
 const initialHierarchyState = {
   enabled: true,
-  levelSeparation: 150,
+  levelSeparation: 140,
   nodeSpacing: 100,
   treeSpacing: 200,
-  blockShifting: true,
+  blockShifting: false,
   edgeMinimization: true,
   parentCentralization: true,
   direction: 'UD',
@@ -42,6 +49,19 @@ const hierarchyReducer = (state, action) => {
   }
 }
 
+// Graph is some jsnetworkx instance
+const getNodeColor = (nodeId, graph) => {
+  const isLeafNode = graph.outDegree(nodeId) === 0;
+  if (isLeafNode) { // only ever gets imported
+    return green[100];
+  }
+
+  const isRootNode = graph.inDegree(nodeId) === 0; // only exports things, could be an entrypoint
+  if (isRootNode) {
+    return grey[300];
+  }
+  return DEFAULT_NODE_COLOR;
+}
 
 const PageDependencyTree = props => {
         const [filePath, setFilePath] = useState(DEFAULT_PATH);
@@ -49,6 +69,9 @@ const PageDependencyTree = props => {
         const [isHierarchical, setIsHierarchical] = useState(false);
         const [isDrawerVisible, setIsDrawerVisible] = useState(false);
         const [isLabelVisible, setIsLabelVisible] = useState(false);
+
+        const [selectedNode, setSelectedNode] = useState(undefined);
+        const [selectedEdges, setSelectedEdges] = useState([]);
 
         // Hierarchy Properties
         const [hierarchyState, hierarchyDispatch] = useReducer(hierarchyReducer, initialHierarchyState);
@@ -126,16 +149,34 @@ const PageDependencyTree = props => {
         const [storedWidth, setWidth] = useState(pageWidth - defaultMapWidth);
 
         const visJsGraphOptions = {
-          width: storedWidth,
-          layout: { hierarchical: isHierarchical && hierarchyState }, edges: { color: '#000000' }, nodes: { shape: 'box' } };
+          width: `${storedWidth}`,
+          layout: { hierarchical: isHierarchical && hierarchyState }, edges: { color: '#ccc' }, nodes: { shape: 'box', borderWidth: 1 } };
 
         let graph = dependencyTree;
 
+        if (selectedNode) {
+          graph = {
+            edges: graph.edges,
+            nodes: graph.nodes.map(
+              node => {
+                const backgroundColor = getNodeColor(node.id, networkXGraph);
+
+                if (node.id === selectedNode) {
+                  return { ...node, color: { border: SELECTED_NODE_OUTLINE, background: backgroundColor, highlight: { border: SELECTED_NODE_OUTLINE, background: backgroundColor } } };
+                } else {
+                  return { ...node, color: {
+                    background: backgroundColor,
+                    border: backgroundColor
+                  } };
+                }
+              }
+            ) };
+        }
+
         if (!isLabelVisible) {
           graph = { edges: graph.edges, nodes: graph.nodes.map(node => ({
-              id: node.id,
-              label: undefined,
-              size: 10
+              ...node,
+              label: undefined
             })) };
         }
 
@@ -152,7 +193,7 @@ const PageDependencyTree = props => {
               <dg.Folder label="Layout" expanded>
                 <dg.Checkbox label="Use Hierarchy" checked={isHierarchical} onChange={handleToggleHierarchy} />
                 {isHierarchical && <dg.Folder label="Hierarchy Options" expanded={isHierarchical}>
-                    <dg.Select label="direction" options={['UD', 'DU', 'LR', 'LR']} value={hierarchyState.direction} onChange={handleSetHierarchyProp.direction} />
+                    <dg.Select label="direction" options={['UD', 'DU', 'LR', 'RL']} value={hierarchyState.direction} onChange={handleSetHierarchyProp.direction} />
                     <dg.Select label="sortMethod" options={['directed', 'hubsize']} value={hierarchyState.sortMethod} onChange={handleSetHierarchyProp.sortMethod} />
                     <dg.Checkbox label="blockShifting" checked={hierarchyState.blockShifting} onChange={handleSetHierarchyProp.blockShifting} />
                     <dg.Checkbox label="edgeMinimization" checked={hierarchyState.edgeMinimization} onChange={handleSetHierarchyProp.edgeMinimization} />
@@ -167,29 +208,68 @@ const PageDependencyTree = props => {
 
         const appBarProps = { handleOpenFileClick: handleOpenFileOrDirectory, fetchTree: handleFetchTree };
 
-        const events = { select(event) {
+        const events = {
+          select: (event) => {
             const { nodes, edges } = event;
 
-            console.log(networkXGraph);
+            if (nodes.length > 0 ) {
+              setSelectedNode(nodes[0]);
+            }
+            // console.log(event);
+            // console.log(networkXGraph);
+          }};
 
-            // networkXGraph;
-          } };
+        const filteredEdges = graph.edges.filter(edge => edge.from === selectedNode || edge.to === selectedNode);
+        const filteredNodes = Array.from(new Set(filteredEdges.flatMap(
+              edge => [edge.to, edge.from]
+            ))).map(id => ({
+          id,
+          // label: id,
+          color:
+            id === selectedNode
+              ? SELECTED_NODE_COLOR
+              : getNodeColor(id, networkXGraph)
+        }));
+        const filteredGraph = {
+          nodes: filteredNodes,
+          edges: filteredEdges
+        }
+        const filteredGraphOptions = {
+          ...visJsGraphOptions,
+          width: `${pageWidth - storedWidth - 5}`,
+          height: '500',
+          layout: { hierarchical: {
+            direction: 'DU',
+            sortMethod: 'directed'
+          }}
+
+        };
 
         return <div>
             <PrimaryAppBar {...appBarProps} />
-            <SplitPane
-              split="vertical"
-              minSize={250}
-              defaultSize={defaultMapWidth}
-              primary="first"
-              onChange={size => setWidth(size)}
-              >
-              <div className={styles.graphContainer}>
+            <SplitPane split="vertical" minSize={250} defaultSize={defaultMapWidth} primary="first" onChange={size => setWidth(size)}>
+              <div className={styles.graphContainer} style={{ width: storedWidth }}>
+                <div style={{
+                  width: storedWidth,
+                  overflow: 'hidden',
+  textOverflow: 'ellipsis' }}>
+                  <Typography variant="h6" gutterLeft>
+                    {filePath && filePath}
+                  </Typography>
+                </div>
+
                 {hasNodes && <Graph graph={graph} options={visJsGraphOptions} events={events} />}
                 <ControlPanel />
               </div>
+
+              <div styles={{ width: pageWidth - storedWidth }}>
+                <Typography variant="h6">
+                  {selectedNode && selectedNode}
+                </Typography>
+                {hasNodes && <Graph graph={filteredGraph} options={filteredGraphOptions} events={events} />}
+              </div>
             </SplitPane>
           </div>;
-      };;;
+      }
 
 export default PageDependencyTree;

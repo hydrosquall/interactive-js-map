@@ -6,7 +6,8 @@
 
 body {
   position: relative;
-  color: white;
+
+  /* color: white; */
   height: 100vh;
 
   /* background-color: #232c39;
@@ -21,7 +22,8 @@ h2 {
   font-size: 2.25rem;
   font-weight: bold;
   letter-spacing: -0.025em;
-  color: #fff;
+
+  /* color: #fff; */
 }
 
 p {
