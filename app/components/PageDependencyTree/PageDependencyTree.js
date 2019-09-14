@@ -1,5 +1,7 @@
 import React, { useCallback, useState, useReducer, useEffect } from 'react';
 import Graph from 'react-graph-vis';
+// import { info } from 'jsnetworkx';
+
 import * as dg from 'dis-gui';
 import SplitPane from 'react-split-pane';
 import Typography from '@material-ui/core/Typography';
@@ -7,10 +9,12 @@ import red from '@material-ui/core/colors/red';
 import blue from '@material-ui/core/colors/blue';
 import green from '@material-ui/core/colors/green';
 import grey from '@material-ui/core/colors/grey';
+import Grid from '@material-ui/core/Grid';
 
 import { remote } from 'electron';
 
 import { PrimaryAppBar } from './Toolbar';
+import VirtualizedList from './VirtualizedList';
 
 import styles from './page-dependency-tree.css';
 
@@ -98,9 +102,10 @@ const PageDependencyTree = props => {
         // All the cached callbacks
         const handleFetchTree = useCallback(
           () => {
+            setSelectedNode(undefined);
             getDotGraph(filePath, webpackConfig);
           },
-          [filePath, webpackConfig]
+          [filePath, webpackConfig, setSelectedNode]
         );
         const handleToggleHierarchy = useCallback(
           event => {
@@ -211,9 +216,22 @@ const PageDependencyTree = props => {
         const events = {
           select: (event) => {
             const { nodes, edges } = event;
+            console.log(event);
 
             if (nodes.length > 0 ) {
               setSelectedNode(nodes[0]);
+              console.log(networkXGraph.predecessors(nodes[0]));
+              graph = {
+                edges: graph.edges,
+                nodes: graph.nodes.map(node => {
+
+                  return {
+                    ...node,
+                    // label: node.id === nodes[0] ? 'foobar' : ''
+                  }
+                })
+
+              }
             }
             // console.log(event);
             // console.log(networkXGraph);
@@ -234,10 +252,13 @@ const PageDependencyTree = props => {
           nodes: filteredNodes,
           edges: filteredEdges
         }
+
+        const secondPaneWidth = pageWidth - storedWidth - 6;
+
         const filteredGraphOptions = {
           ...visJsGraphOptions,
-          width: `${pageWidth - storedWidth - 5}`,
-          height: '500',
+          width: `${secondPaneWidth}`,
+          height: '250',
           layout: { hierarchical: {
             direction: 'DU',
             sortMethod: 'directed'
@@ -245,14 +266,12 @@ const PageDependencyTree = props => {
 
         };
 
+
         return <div>
             <PrimaryAppBar {...appBarProps} />
             <SplitPane split="vertical" minSize={250} defaultSize={defaultMapWidth} primary="first" onChange={size => setWidth(size)}>
               <div className={styles.graphContainer} style={{ width: storedWidth }}>
-                <div style={{
-                  width: storedWidth,
-                  overflow: 'hidden',
-  textOverflow: 'ellipsis' }}>
+                <div style={{ width: storedWidth, overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   <Typography variant="h6" gutterLeft>
                     {filePath && filePath}
                   </Typography>
@@ -262,11 +281,42 @@ const PageDependencyTree = props => {
                 <ControlPanel />
               </div>
 
-              <div styles={{ width: pageWidth - storedWidth }}>
+              <div styles={{ width: secondPaneWidth }}>
                 <Typography variant="h6">
                   {selectedNode && selectedNode}
                 </Typography>
                 {hasNodes && <Graph graph={filteredGraph} options={filteredGraphOptions} events={events} />}
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <div>
+                      {selectedNode && (
+                        <VirtualizedList
+                          itemData={networkXGraph.successors(
+                            selectedNode
+                          )}
+                          width={secondPaneWidth / 2}
+                          height={200}
+                          subtitle={'Uses'}
+                        />
+                      )}
+                    </div>
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <div>
+                      {selectedNode && (
+                        <VirtualizedList
+                          itemData={networkXGraph.predecessors(
+                            selectedNode
+                          )}
+                          width={secondPaneWidth / 2}
+                          height={200}
+                          subtitle={'Is used by'}
+                        />
+                      )}
+                    </div>
+                  </Grid>
+                </Grid>
               </div>
             </SplitPane>
           </div>;
