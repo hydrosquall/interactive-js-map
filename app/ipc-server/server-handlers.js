@@ -34,7 +34,9 @@ handlers['get-file-dependency-tree'] = async (payload) => {
   const { absPath, webpackConfig } = payload;
   const relativePath = path.relative(process.env.PWD, absPath)
 
-  const config = {};
+  const config = {
+    fileExtensions: ['js', 'jsx', 'ts', 'tsx']
+  };
   if (webpackConfig) {
     config.webpackConfig = webpackConfig;
   }

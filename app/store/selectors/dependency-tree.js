@@ -38,12 +38,29 @@ export const networkXGraph$ = createSelector( visNetworkGraph$, graph => {
   const networkXEdges = graph.edges.map(edge => [edge.from, edge.to]);
   digraph.addNodesFrom(graph.nodes.map(node => node.id));
   digraph.addEdgesFrom(networkXEdges);
-
   return digraph;
 });
+
+export const enrichedGraph$ = createSelector(
+  visNetworkGraph$,
+  networkXGraph$,
+  (visNetwork, networkX) => {
+      return {
+        edges: visNetwork.edges,
+        nodes: visNetwork.nodes.map(
+          node => ({
+            ...node,
+            inDegree: networkX.inDegree(node.id),
+            outDegree: networkX.outDegree(node.id)
+          })
+        )
+      };
+  }
+);
 
 export default {
   dotGraph$,
   visNetworkGraph$,
-  networkXGraph$
+  networkXGraph$,
+  enrichedGraph$
 }

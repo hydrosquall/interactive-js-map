@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useReducer, useEffect } from 'react';
+import React, { useCallback, useState, useReducer, useEffect, useRef } from 'react';
 import Graph from 'react-graph-vis';
 // import { info } from 'jsnetworkx';
 
@@ -10,6 +10,9 @@ import blue from '@material-ui/core/colors/blue';
 import green from '@material-ui/core/colors/green';
 import grey from '@material-ui/core/colors/grey';
 import Grid from '@material-ui/core/Grid';
+
+import IconButton from '@material-ui/core/IconButton';
+import ClearIcon from '@material-ui/icons/Clear';
 
 import { remote } from 'electron';
 
@@ -25,6 +28,7 @@ const { dialog } = remote; // Open file dialog
 const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
 const DEFAULT_MAP_FRACTION = 0.5;
 const DEFAULT_NODE_COLOR = blue[100];
+const ROOT_NODE_COLOR = grey[500];
 const SELECTED_NODE_COLOR = red[100];
 const SELECTED_NODE_OUTLINE = red[500];
 
@@ -62,12 +66,37 @@ const getNodeColor = (nodeId, graph) => {
 
   const isRootNode = graph.inDegree(nodeId) === 0; // only exports things, could be an entrypoint
   if (isRootNode) {
-    return grey[300];
+    return ROOT_NODE_COLOR;
   }
   return DEFAULT_NODE_COLOR;
 }
 
+const getNodeColorEnriched = (enrichedNode) => {
+  // island nodes - stand by themselves.
+  const isIsland = enrichedNode.outDegree === 0 && enrichedNode.inDegree === 0;
+  if (isIsland) {
+    // only ever gets imported
+    return grey[200];
+  }
+
+
+  const isLeafNode = enrichedNode.outDegree === 0;
+  if (isLeafNode) {
+    // only ever gets imported
+    return green[100];
+  }
+
+  // No parents, but does have children.
+  const isRootNode = enrichedNode.inDegree === 0;
+  if (isRootNode) {
+    return ROOT_NODE_COLOR;
+  }
+  return DEFAULT_NODE_COLOR;
+};
+
 const PageDependencyTree = props => {
+        const visJsRef = useRef(null);
+
         const [filePath, setFilePath] = useState(DEFAULT_PATH);
         const [webpackConfig, setWebpackConfig] = useState(null);
         const [isHierarchical, setIsHierarchical] = useState(false);
@@ -107,6 +136,18 @@ const PageDependencyTree = props => {
           },
           [filePath, webpackConfig, setSelectedNode]
         );
+
+        const handleSetSelectedNode = useCallback(
+          (node) => {
+            console.log(node);
+            setSelectedNode(node);
+            if (visJsRef !== null) {
+              visJsRef.current.selectNodes( [node]);
+              visJsRef.current.redraw();
+            }
+          },
+          [setSelectedNode, visJsRef]
+        );
         const handleToggleHierarchy = useCallback(
           event => {
             setIsHierarchical(event);
@@ -132,7 +173,7 @@ const PageDependencyTree = props => {
           [setIsLabelVisible]
         );
 
-        // TODO: figure out how to only run this once with hooks. UseEffect doesn't work.
+        // TODO: figure out how to only run this once with hooks. UseEffect doesn't work, but this is fine for now.
         const handleSetHierarchyProp = new Map();
         // Build the handlers once - operate on handleSetHierarchyProp;
         const hierarchyProps = Object.keys(initialHierarchyState);
@@ -153,30 +194,18 @@ const PageDependencyTree = props => {
         const defaultMapWidth = pageWidth * DEFAULT_MAP_FRACTION; // sizing based on vega-lite sizing
         const [storedWidth, setWidth] = useState(pageWidth - defaultMapWidth);
 
-        const visJsGraphOptions = {
-          width: `${storedWidth}`,
-          layout: { hierarchical: isHierarchical && hierarchyState }, edges: { color: '#ccc' }, nodes: { shape: 'box', borderWidth: 1 } };
+        const visJsGraphOptions = { width: `${storedWidth}`, layout: { hierarchical: isHierarchical && hierarchyState }, edges: { color: '#ccc' }, nodes: { shape: 'box', borderWidth: 1, color: {highlight: { border: SELECTED_NODE_OUTLINE }} } };
 
-        let graph = dependencyTree;
-
-        if (selectedNode) {
-          graph = {
-            edges: graph.edges,
-            nodes: graph.nodes.map(
+        let graph = {
+            edges: dependencyTree.edges,
+            nodes: dependencyTree.nodes.map(
               node => {
-                const backgroundColor = getNodeColor(node.id, networkXGraph);
-
-                if (node.id === selectedNode) {
-                  return { ...node, color: { border: SELECTED_NODE_OUTLINE, background: backgroundColor, highlight: { border: SELECTED_NODE_OUTLINE, background: backgroundColor } } };
-                } else {
-                  return { ...node, color: {
-                    background: backgroundColor,
-                    border: backgroundColor
-                  } };
-                }
+                const backgroundColor = getNodeColorEnriched(node);
+                return { ...node, color: { background: backgroundColor, border: backgroundColor } };
               }
-            ) };
-        }
+            )
+        };
+
 
         if (!isLabelVisible) {
           graph = { edges: graph.edges, nodes: graph.nodes.map(node => ({
@@ -187,15 +216,18 @@ const PageDependencyTree = props => {
 
         const guiStyle = { bottom: '0px', left: '0px', controlWidth: 400, font: '14px Roboto, sans-serif', label: { fontColor: '#eeeeee' } };
 
+        // Assume folder can collapse when you're in detail view.
+        const isExpandFolders = selectedNode === undefined;
+
         const ControlPanel = () => <dg.GUI style={guiStyle}>
-            <dg.Folder label="Data Settings" expanded>
+            <dg.Folder label="Data Settings">
               <dg.Text label="Filepath" value={filePath} onFinishChange={handleSetFilepath} />
               <dg.Text label="webpack path" value={webpackConfig} onFinishChange={handleSetWebpackConfig} />
             </dg.Folder>
 
-            <dg.Folder label="Graph Settings" expanded>
+            <dg.Folder label="Graph Settings" expanded={isExpandFolders}>
               <dg.Checkbox label="Use Labels" checked={isLabelVisible} onChange={handleSetLabelVisible} />
-              <dg.Folder label="Layout" expanded>
+              <dg.Folder label="Layout" expanded={isExpandFolders}>
                 <dg.Checkbox label="Use Hierarchy" checked={isHierarchical} onChange={handleToggleHierarchy} />
                 {isHierarchical && <dg.Folder label="Hierarchy Options" expanded={isHierarchical}>
                     <dg.Select label="direction" options={['UD', 'DU', 'LR', 'RL']} value={hierarchyState.direction} onChange={handleSetHierarchyProp.direction} />
@@ -216,33 +248,19 @@ const PageDependencyTree = props => {
         const events = {
           select: (event) => {
             const { nodes, edges } = event;
-            console.log(event);
+            // console.log(event);
 
             if (nodes.length > 0 ) {
               setSelectedNode(nodes[0]);
-              console.log(networkXGraph.predecessors(nodes[0]));
-              graph = {
-                edges: graph.edges,
-                nodes: graph.nodes.map(node => {
-
-                  return {
-                    ...node,
-                    // label: node.id === nodes[0] ? 'foobar' : ''
-                  }
-                })
-
-              }
             }
-            // console.log(event);
-            // console.log(networkXGraph);
           }};
 
+        // For the right side panel
         const filteredEdges = graph.edges.filter(edge => edge.from === selectedNode || edge.to === selectedNode);
         const filteredNodes = Array.from(new Set(filteredEdges.flatMap(
               edge => [edge.to, edge.from]
             ))).map(id => ({
           id,
-          // label: id,
           color:
             id === selectedNode
               ? SELECTED_NODE_COLOR
@@ -263,9 +281,11 @@ const PageDependencyTree = props => {
             direction: 'DU',
             sortMethod: 'directed'
           }}
-
         };
 
+        const rootNodes = graph.nodes
+          .filter(node => node.inDegree === 0 && node.outDegree !== 0)
+          .map(node => node.id);
 
         return <div>
             <PrimaryAppBar {...appBarProps} />
@@ -276,15 +296,41 @@ const PageDependencyTree = props => {
                     {filePath && filePath}
                   </Typography>
                 </div>
-
-                {hasNodes && <Graph graph={graph} options={visJsGraphOptions} events={events} />}
+                {hasNodes && <Graph
+                  graph={graph}
+                  options={visJsGraphOptions}
+                  events={events}
+                  getNetwork={network => {
+                      visJsRef.current = network;
+                    }} />}
                 <ControlPanel />
               </div>
 
               <div styles={{ width: secondPaneWidth }}>
-                <Typography variant="h6">
-                  {selectedNode && selectedNode}
-                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <div>
+                      {graph.nodes.length > 0 && (
+                        <VirtualizedList
+                          itemData={rootNodes}
+                          width={secondPaneWidth}
+                          height={200}
+                          subtitle={`"Root" Files (${rootNodes.length}) - Probable Entrypoints`}
+                          onRowClick={handleSetSelectedNode}
+                        />
+                      )}
+                    </div>
+                  </Grid>
+                </Grid>
+                <div>
+                  {selectedNode && <Typography variant="h6">
+                      {selectedNode}
+                      <IconButton edge="end" aria-label="search" onClick={() => setSelectedNode(undefined)}>
+                        <ClearIcon />
+                      </IconButton>
+                    </Typography>}
+                </div>
+
                 {hasNodes && <Graph graph={filteredGraph} options={filteredGraphOptions} events={events} />}
 
                 <Grid container spacing={2}>
@@ -298,6 +344,7 @@ const PageDependencyTree = props => {
                           width={secondPaneWidth / 2}
                           height={200}
                           subtitle={'Uses'}
+                          onRowClick={handleSetSelectedNode}
                         />
                       )}
                     </div>
@@ -312,6 +359,7 @@ const PageDependencyTree = props => {
                           width={secondPaneWidth / 2}
                           height={200}
                           subtitle={'Is used by'}
+                          onRowClick={handleSetSelectedNode}
                         />
                       )}
                     </div>
