@@ -1,6 +1,8 @@
 import React, { useCallback, useState, useReducer, useEffect } from 'react';
 import Graph from 'react-graph-vis';
 import * as dg from 'dis-gui';
+import SplitPane from 'react-split-pane';
+
 
 import { remote } from 'electron';
 
@@ -13,6 +15,7 @@ const { dialog } = remote; // Open file dialog
 
 // Placeholder
 const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
+const DEFAULT_MAP_FRACTION = 0.5;
 
 // Mini reducer
 const SET_HIERARCHY_PROPERTY = 'SET_HIERARCHY_PROPERTY';
@@ -41,148 +44,152 @@ const hierarchyReducer = (state, action) => {
 
 
 const PageDependencyTree = props => {
+        const [filePath, setFilePath] = useState(DEFAULT_PATH);
+        const [webpackConfig, setWebpackConfig] = useState(null);
+        const [isHierarchical, setIsHierarchical] = useState(false);
+        const [isDrawerVisible, setIsDrawerVisible] = useState(false);
+        const [isLabelVisible, setIsLabelVisible] = useState(false);
 
-  const [filePath, setFilePath ] = useState(DEFAULT_PATH);
-  const [webpackConfig, setWebpackConfig] = useState(null);
-  const [isHierarchical, setIsHierarchical ] = useState(false);
-  const [isDrawerVisible, setIsDrawerVisible ] = useState(false);
+        // Hierarchy Properties
+        const [hierarchyState, hierarchyDispatch] = useReducer(hierarchyReducer, initialHierarchyState);
 
-  // Hierarchy Properties
-  const [ hierarchyState, hierarchyDispatch ] = useReducer(hierarchyReducer, initialHierarchyState);
+        const handleOpenFileOrDirectory = useCallback(
+          () => {
+            // Note: on windows or linux, a dialog is only allowed to open one, not both
+            // As a result, that would lead to just opening a directory dialogy.
+            dialog
+              .showOpenDialog({
+                properties: ['openFile', 'openDirectory']
+              })
+              .then(payload => {
+                const { canceled, filePaths, bookmarks } = payload;
+                if (canceled) {
+                  return;
+                }
+                setFilePath(filePaths[0]); // for now, stick to single-select.
+              });
+          },
+          [setFilePath]
+        );
 
-  const handleOpenFileOrDirectory = useCallback(
-    () => {
-      // Note: on windows or linux, a dialog is only allowed to open one, not both
-      // As a result, that would lead to just opening a directory dialogy.
-      dialog
-        .showOpenDialog({ properties: ['openFile', 'openDirectory'] })
-        .then(payload => {
-          const { canceled, filePaths, bookmarks } = payload;
-          if (canceled) {
-            return;
-          }
-          setFilePath(filePaths[0]); // for now, stick to single-select.
+        // All the cached callbacks
+        const handleFetchTree = useCallback(
+          () => {
+            getDotGraph(filePath, webpackConfig);
+          },
+          [filePath, webpackConfig]
+        );
+        const handleToggleHierarchy = useCallback(
+          event => {
+            setIsHierarchical(event);
+          },
+          [setIsHierarchical]
+        );
+        const handleSetFilepath = useCallback(
+          filepath => {
+            setFilePath(filepath);
+          },
+          [setFilePath]
+        );
+        const handleSetWebpackConfig = useCallback(
+          config => {
+            setWebpackConfig(config);
+          },
+          [setWebpackConfig]
+        );
+        const handleSetLabelVisible = useCallback(
+          isVisible => {
+            setIsLabelVisible(isVisible);
+          },
+          [setIsLabelVisible]
+        );
+
+        // TODO: figure out how to only run this once with hooks. UseEffect doesn't work.
+        const handleSetHierarchyProp = new Map();
+        // Build the handlers once - operate on handleSetHierarchyProp;
+        const hierarchyProps = Object.keys(initialHierarchyState);
+        hierarchyProps.forEach(prop => {
+          handleSetHierarchyProp[prop] = useCallback(
+            value =>
+              hierarchyDispatch({
+                type: SET_HIERARCHY_PROPERTY,
+                payload: { [prop]: value }
+              }),
+            [hierarchyDispatch]
+          );
         });
-    },
-    [setFilePath]
-  );
 
-  // All the cached callbacks
-  const handleFetchTree = useCallback(
-    () => {
-      getDotGraph(filePath, webpackConfig);
-    },
-    [filePath, webpackConfig]
-  );
-  const handleToggleHierarchy = useCallback(
-    (event) => {
-      setIsHierarchical(event);
-    },
-    [setIsHierarchical]
-  );
-  const handleSetFilepath = useCallback(
-    filepath => {
-      setFilePath(filepath);
-    },
-    [setFilePath]
-  );
-  const handleSetWebpackConfig= useCallback(
-    config => {
-      setWebpackConfig(config);
-    },
-    [setWebpackConfig]
-  );
+        const { dependencyTree, getDotGraph, networkXGraph } = props;
+        const hasNodes = dependencyTree && dependencyTree.nodes.length > 0;
+        const pageWidth = window.innerWidth;
+        const defaultMapWidth = pageWidth * DEFAULT_MAP_FRACTION; // sizing based on vega-lite sizing
+        const [storedWidth, setWidth] = useState(pageWidth - defaultMapWidth);
 
-  // TODO: figure out how to only run this once with hooks. UseEffect doesn't work.
-  const handleSetHierarchyProp = new Map();
-  // Build the handlers once - operate on handleSetHierarchyProp;
-  const hierarchyProps = Object.keys(initialHierarchyState);
-  hierarchyProps.forEach(prop => {
-    handleSetHierarchyProp[prop] = useCallback(
-      value =>
-        hierarchyDispatch({
-          type: SET_HIERARCHY_PROPERTY,
-          payload: { [prop]: value }
-        }),
-      [hierarchyDispatch]
-    );
-  });
+        const visJsGraphOptions = {
+          width: storedWidth,
+          layout: { hierarchical: isHierarchical && hierarchyState }, edges: { color: '#000000' }, nodes: { shape: 'box' } };
 
-  const { dependencyTree, getDotGraph, networkXGraph } = props;
-  const hasNodes = dependencyTree && dependencyTree.nodes.length > 0;
-  const visJsGraphOptions = {
-    layout: { hierarchical: isHierarchical && hierarchyState },
-    edges: { color: '#000000' },
-    nodes: {
-      shape: 'box',
-      // widthConstraint: 20
-    },
-    // interaction: {
-    //   hover: true,
-    // }
-  };
+        let graph = dependencyTree;
 
-  const guiStyle = {
-    bottom: '0px',
-    right: '0px',
-    controlWidth: 400,
-    font: '14px Roboto, sans-serif',
-    label: {
-      fontColor: '#eeeeee'
-    }
-  };
+        if (!isLabelVisible) {
+          graph = { edges: graph.edges, nodes: graph.nodes.map(node => ({
+              id: node.id,
+              label: undefined,
+              size: 10
+            })) };
+        }
 
-  const ControlPanel = () => <dg.GUI style={guiStyle}>
-      <dg.Folder label="Data Settings" expanded>
-        <dg.Text label="Filepath" value={filePath} onFinishChange={handleSetFilepath} />
-        <dg.Text label="webpack path" value={webpackConfig} onFinishChange={handleSetWebpackConfig} />
-      </dg.Folder>
+        const guiStyle = { bottom: '0px', left: '0px', controlWidth: 400, font: '14px Roboto, sans-serif', label: { fontColor: '#eeeeee' } };
 
-      <dg.Folder label="Graph Settings" expanded>
-        <dg.Folder label="Layout" expanded>
-          <dg.Checkbox label="Use Hierarchy" checked={isHierarchical} onChange={handleToggleHierarchy} />
-          {isHierarchical && <dg.Folder label="Hierarchy Options" expanded={isHierarchical}>
-              <dg.Select label="direction" options={['UD', 'DU', 'LR', 'LR']} value={hierarchyState.direction} onChange={handleSetHierarchyProp.direction} />
-              <dg.Select label="sortMethod" options={['directed', 'hubsize']} value={hierarchyState.sortMethod} onChange={handleSetHierarchyProp.sortMethod} />
-              <dg.Checkbox label="blockShifting" checked={hierarchyState.blockShifting} onChange={handleSetHierarchyProp.blockShifting} />
-              <dg.Checkbox label="edgeMinimization" checked={hierarchyState.edgeMinimization} onChange={handleSetHierarchyProp.edgeMinimization} />
-              <dg.Checkbox label="parentCentralization" checked={hierarchyState.parentCentralization} onChange={handleSetHierarchyProp.parentCentralization} />
-              <dg.Number label="levelSeparation" value={hierarchyState.levelSeparation} min={0} max={200} step={1} onFinishChange={handleSetHierarchyProp.levelSeparation} />
-              <dg.Number label="nodeSpacing" value={hierarchyState.nodeSpacing} min={0} max={300} step={1} onFinishChange={handleSetHierarchyProp.nodeSpacing} />
-              <dg.Number label="treeSpacing" value={hierarchyState.treeSpacing} min={0} max={300} step={1} onFinishChange={handleSetHierarchyProp.treeSpacing} />
-            </dg.Folder>}
-        </dg.Folder>
-      </dg.Folder>
-    </dg.GUI>;
+        const ControlPanel = () => <dg.GUI style={guiStyle}>
+            <dg.Folder label="Data Settings" expanded>
+              <dg.Text label="Filepath" value={filePath} onFinishChange={handleSetFilepath} />
+              <dg.Text label="webpack path" value={webpackConfig} onFinishChange={handleSetWebpackConfig} />
+            </dg.Folder>
 
-  const appBarProps = {
-    handleOpenFileClick: handleOpenFileOrDirectory,
-    fetchTree: handleFetchTree
-  };
+            <dg.Folder label="Graph Settings" expanded>
+              <dg.Checkbox label="Use Labels" checked={isLabelVisible} onChange={handleSetLabelVisible} />
+              <dg.Folder label="Layout" expanded>
+                <dg.Checkbox label="Use Hierarchy" checked={isHierarchical} onChange={handleToggleHierarchy} />
+                {isHierarchical && <dg.Folder label="Hierarchy Options" expanded={isHierarchical}>
+                    <dg.Select label="direction" options={['UD', 'DU', 'LR', 'LR']} value={hierarchyState.direction} onChange={handleSetHierarchyProp.direction} />
+                    <dg.Select label="sortMethod" options={['directed', 'hubsize']} value={hierarchyState.sortMethod} onChange={handleSetHierarchyProp.sortMethod} />
+                    <dg.Checkbox label="blockShifting" checked={hierarchyState.blockShifting} onChange={handleSetHierarchyProp.blockShifting} />
+                    <dg.Checkbox label="edgeMinimization" checked={hierarchyState.edgeMinimization} onChange={handleSetHierarchyProp.edgeMinimization} />
+                    <dg.Checkbox label="parentCentralization" checked={hierarchyState.parentCentralization} onChange={handleSetHierarchyProp.parentCentralization} />
+                    <dg.Number label="levelSeparation" value={hierarchyState.levelSeparation} min={0} max={200} step={1} onFinishChange={handleSetHierarchyProp.levelSeparation} />
+                    <dg.Number label="nodeSpacing" value={hierarchyState.nodeSpacing} min={0} max={300} step={1} onFinishChange={handleSetHierarchyProp.nodeSpacing} />
+                    <dg.Number label="treeSpacing" value={hierarchyState.treeSpacing} min={0} max={300} step={1} onFinishChange={handleSetHierarchyProp.treeSpacing} />
+                  </dg.Folder>}
+              </dg.Folder>
+            </dg.Folder>
+          </dg.GUI>;
 
-  const events = { select(event) {
-      const { nodes, edges } = event;
+        const appBarProps = { handleOpenFileClick: handleOpenFileOrDirectory, fetchTree: handleFetchTree };
 
-      console.log(networkXGraph);
+        const events = { select(event) {
+            const { nodes, edges } = event;
 
-      // networkXGraph;
-    } };
+            console.log(networkXGraph);
 
-  return <div>
-      <PrimaryAppBar
-        {...appBarProps}
-      />
-      <div className={styles.graphContainer}>
-        {hasNodes && (
-          <Graph
-            graph={dependencyTree}
-            options={visJsGraphOptions}
-            events={events}
-          />
-        )}
-      </div>
-      <ControlPanel />
-    </div>;
-};
+            // networkXGraph;
+          } };
+
+        return <div>
+            <PrimaryAppBar {...appBarProps} />
+            <SplitPane
+              split="vertical"
+              minSize={250}
+              defaultSize={defaultMapWidth}
+              primary="first"
+              onChange={size => setWidth(size)}
+              >
+              <div className={styles.graphContainer}>
+                {hasNodes && <Graph graph={graph} options={visJsGraphOptions} events={events} />}
+                <ControlPanel />
+              </div>
+            </SplitPane>
+          </div>;
+      };;;
 
 export default PageDependencyTree;

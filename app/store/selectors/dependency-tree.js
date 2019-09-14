@@ -27,9 +27,9 @@ export const visNetworkGraph$ = createSelector(
       const graph = network.convertDot(dotString);
       return {
         nodes: graph.nodes, //.map(node => ({...node })),
+        // nodes: graph.nodes.map(node => ({ id: node.id })),
         edges: graph.edges
       };
-
   }
 );
 
