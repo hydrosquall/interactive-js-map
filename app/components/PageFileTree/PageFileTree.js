@@ -50,7 +50,7 @@ const PageFileTree = props => {
   );
 
   const hasNodes = fileTreeList && fileTreeList.length > 0;
-  console.log(fileTreeList);
+  // console.log(fileTreeList);
 
   const appBarProps = {
     handleOpenFileClick: handleOpenFileOrDirectory,

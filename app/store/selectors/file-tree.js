@@ -13,6 +13,8 @@ export const fileTree$ = createSelector(
   state => state.fileTree
 );
 
+const ALLOW_FILES = false;
+
 export const fileTreeList$ = createSelector(
   fileTree$,
   tree => {
@@ -20,24 +22,26 @@ export const fileTreeList$ = createSelector(
     return;
   }
 
-  const nodes = treeToList(tree);
-  // console.log({nodes});
+  const nodes = treeToList(tree).filter(node => ALLOW_FILES || node.type === 'directory');
+
+
   const cytoscapeElements = nodes.flatMap(node => {
-
-    const edges = node.children && node.children.map(child => ({ data: {source: node.path, target: child.path} })) || [];
-
+    const edges = node.children && node.children.map(child => {
+      if (!ALLOW_FILES && child.type !== 'directory') {
+        return null
+      }
+      return { data: {source: node.path, target: child.path} }
+      }).filter(edge => edge !== null) || [];
     return [
-      // node
-      { data: { id: node.path, label: node.name, size: node.size, type: node.type }},
-      // edges
-      ...edges
-
-    ]
+        // node
+        { data: { id: node.path, label: node.name, size: node.size, type: node.type }},
+        // edges
+        ...edges
+      ]
   });
 
   return cytoscapeElements;
-  }
-);
+  });
 
 
 
