@@ -18,18 +18,15 @@ import FilterList from '@material-ui/icons/FilterList';
 import FolderOpen from '@material-ui/icons/FolderOpen';
 import InsertDriveFile from '@material-ui/icons/InsertDriveFile';
 
-import { remote } from 'electron';
-import path from 'path';
 
 import { PrimaryAppBar } from './Toolbar';
-import VirtualizedList from './VirtualizedList';
+import FileList from './FileList';
+import CommitTree from './CommitTree';
 
 import styles from './page-dependency-tree.css';
+import { dirname, resolve } from 'path';
 
-import { dirname } from 'path';
-
-
-const { dialog } = remote; // Open file dialog
+import { remote } from 'electron';
 
 // Placeholder
 const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
@@ -126,7 +123,7 @@ const PageDependencyTree = props => {
           () => {
             // Note: on windows or linux, a dialog is only allowed to open one, not both
             // As a result, that would lead to just opening a directory dialogy.
-            dialog
+            remote.dialog
               .showOpenDialog({
                 properties: ['openFile', 'openDirectory']
               })
@@ -150,15 +147,7 @@ const PageDependencyTree = props => {
           [filePath, webpackConfig, setSelectedNode]
         );
 
-        const handleSetSelectedNode = useCallback(
-          (node) => {
-            setSelectedNode(node);
-            if (visJsRef !== null) {
-              visJsRef.current.selectNodes( [node]);
-            }
-          },
-          [setSelectedNode, visJsRef]
-        );
+
         const handleToggleHierarchy = useCallback(
           event => {
             setIsHierarchical(event);
@@ -189,12 +178,24 @@ const PageDependencyTree = props => {
         const handleGetGitLogs = useCallback(
           filename => {
             if (filePath && filename) {
-              const absPath = path.resolve(filePath, filename);
+              const absPath = resolve(filePath, filename);
               getGitLogs(absPath);
             }
 
           },
           [filePath, getGitLogs]
+        );
+
+        const handleSetSelectedNode = useCallback(
+          node => {
+            setSelectedNode(node);
+            if (visJsRef !== null) {
+              visJsRef.current.selectNodes([node]);
+            }
+            // fetch git data!
+            handleGetGitLogs(node);
+          },
+          [setSelectedNode, visJsRef, handleGetGitLogs]
         );
 
 
@@ -293,7 +294,7 @@ const PageDependencyTree = props => {
             const { nodes, edges } = event;
 
             if (nodes.length > 0 ) {
-              setSelectedNode(nodes[0]);
+              handleSetSelectedNode(nodes[0]);
             }
           }};
 
@@ -355,7 +356,7 @@ const PageDependencyTree = props => {
                   <Grid item xs={12} md={6}>
                     <div>
                       {graph.nodes.length > 0 && (
-                        <VirtualizedList
+                        <FileList
                           itemData={rootNodes}
                           width={secondPaneWidth}
                           height={200}
@@ -368,7 +369,7 @@ const PageDependencyTree = props => {
                     </div>
                   </Grid>
                 </Grid>
-                <div style={{marginLeft: 20}}>
+                <div style={{ marginLeft: 20 }}>
                   {selectedNode && <Typography variant="h6">
                       {selectedNode}
 
@@ -398,7 +399,7 @@ const PageDependencyTree = props => {
                   <Grid item xs={12} md={6}>
                     <div>
                       {selectedNode && (
-                        <VirtualizedList
+                        <FileList
                           itemData={successors}
                           width={secondPaneWidth / 2}
                           height={200}
@@ -412,7 +413,7 @@ const PageDependencyTree = props => {
                   <Grid item xs={12} md={6}>
                     <div>
                       {selectedNode && (
-                        <VirtualizedList
+                        <FileList
                           itemData={predecessors}
                           width={secondPaneWidth / 2}
                           height={200}
@@ -422,6 +423,14 @@ const PageDependencyTree = props => {
                         />
                       )}
                     </div>
+                  </Grid>
+
+                  <Grid item xs={12} md={12}>
+                    <div style={{ marginLeft: 10 }}>
+                      <Typography variant="overline">Authors of the last 20 Commits for this file</Typography>
+                    </div>
+
+                    <CommitTree />
                   </Grid>
                 </Grid>
               </div>

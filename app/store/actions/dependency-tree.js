@@ -60,7 +60,7 @@ export function getDotGraph(filepath, webpackConfig) {
 export function getGitLogs(filepath) {
   return async (dispatch) => {
       const logs = await send('get-git-logs', { absPath: filepath });
-      console.log(logs);
+      // console.log(logs);
       dispatch(setGitLogs(logs));
   };
 }
