@@ -48,14 +48,13 @@ export const visNetworkGraphRaw$ = createSelector(
 export const visNetworkGraph$ = createSelector(
   visNetworkGraphRaw$, filterRegex$,
   (graph, filterRegex) => {
-    console.log({filterRegex});
-    const newGraph = {
+    return {
       // If anything matches, drop it.
       nodes: graph.nodes.filter(node => !filterRegex.some(pattern => pattern.test(node.id))),
       edges: graph.edges.filter(edge => !filterRegex.some(pattern => pattern.test(edge.from) || pattern.test(edge.to)))
     };
-    console.log(newGraph);
-    return newGraph;
+    // console.log(newGraph);
+    // return newGraph;
   }
 );
 

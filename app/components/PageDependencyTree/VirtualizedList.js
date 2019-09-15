@@ -53,7 +53,7 @@ Row.propTypes = {
 
 export default function MyList(props) {
   const classes = useStyles();
-  const { onRowClick } = props;
+  const { onRowClick, onSecondaryClick } = props;
 
   const handleRowClick = useCallback(
     (event) => {
@@ -62,13 +62,23 @@ export default function MyList(props) {
     },
     [onRowClick]
   );
+
+  const handleSecondaryClick = useCallback(
+    event => {
+      const filename = event.target.closest('button').dataset.filename; // same value as item below.
+      onSecondaryClick(filename);
+    },
+    [onSecondaryClick]
+  );
+
+
   return (
     <List className={classes.root} dense={true} subheader={<ListSubheader>{`${props.subtitle}`}</ListSubheader>} style={{ height: props.height, width: props.width }}>
       {props.itemData.map(item => {
         return <ListItem button key={item}>
             <ListItemText primary={`${item}`} onClick={handleRowClick} />
             <ListItemSecondaryAction>
-              <IconButton edge="end" aria-label="search" onClick={() => console.log(item)}>
+              <IconButton edge="end" aria-label="search" onClick={handleSecondaryClick} data-filename={item}>
                 <SearchIcon />
               </IconButton>
             </ListItemSecondaryAction>

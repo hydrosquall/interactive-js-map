@@ -1,10 +1,12 @@
 import { connect } from 'react-redux';
 
 // Redux machinery
-import { getDotGraph, addFilterPatterns } from '../../store/actions/dependency-tree';
 import {
-  visNetworkGraph$,
-  dotGraph$,
+  getDotGraph,
+  addFilterPatterns,
+  getGitLogs
+} from '../../store/actions/dependency-tree';
+import {
   networkXGraph$,
   enrichedGraph$
 } from '../../store/selectors/dependency-tree';
@@ -18,8 +20,9 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = {
   getDotGraph,
-  addFilterPatterns
-}
+  addFilterPatterns,
+  getGitLogs
+};
 
 const PageDependencyTreeContainer = connect(
   mapStateToProps,

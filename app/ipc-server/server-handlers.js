@@ -2,6 +2,9 @@
 const madge = require('madge');
 const path = require('path');
 const directoryTree = require('directory-tree');
+const git = require('simple-git/promise');
+const gitlog = require('gitlog');
+
 
 // Based on https://github.com/jlongster/electron-with-server-example/blob/master/server-handlers.js
 const handlers = {}
@@ -22,11 +25,6 @@ handlers['make-factorial'] = async ({ num }) => {
   return fact(num)
 }
 
-handlers['ring-ring'] = async () => {
-  console.log('picking up the phone')
-  return 'hello!'
-}
-
 handlers['get-file-dependency-tree'] = async (payload) => {
   console.log('Generating Madge Dependency Tree');
 
@@ -41,11 +39,11 @@ handlers['get-file-dependency-tree'] = async (payload) => {
     config.webpackConfig = webpackConfig;
   }
 
-  let result = await madge(relativePath, config)
-    .then(res => {
+  const result = await madge(relativePath, config)
+    .then(res =>
       // console.log(res)
-      return res;
-    })
+       res
+    )
     .then(res => res.dot())
     .catch(error => {
       console.log(error);
@@ -62,9 +60,37 @@ handlers['get-directory-tree'] = async (payload) => {
   const { absPath } = payload;
   const relativePath = path.relative(process.env.PWD, absPath);
 
-  const tree = directoryTree(relativePath);
+  return directoryTree(relativePath);
+};
 
-  return tree;
+
+handlers['get-git-logs'] = async (payload) => {
+  console.log('getting git log data');
+
+  const { absPath } = payload;
+  const parentFolder = path.dirname(absPath);
+
+    // Let's find the current git repository for that particular file
+    // Use the promise version instead of the callback: https://www.npmjs.com/package/simple-git
+  const gitDirectory = await git(parentFolder).revparse(['--show-toplevel']);
+  // console.log({gitDirectory});
+
+  // Then, we'll get the git history for that file!
+  // https://github.com/domharrington/node-gitlog#optional-fields
+  const options = {
+    repo: gitDirectory,
+    fields: [
+      'authorName',
+      'committerDate',
+      'subject',
+      'abbrevHash'
+    ],
+    file: absPath,
+    number: 20
+  }
+
+  let commits = gitlog(options);
+  return commits;
 };
 
 module.exports = handlers

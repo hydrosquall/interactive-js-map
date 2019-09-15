@@ -19,6 +19,7 @@ import FolderOpen from '@material-ui/icons/FolderOpen';
 import InsertDriveFile from '@material-ui/icons/InsertDriveFile';
 
 import { remote } from 'electron';
+import path from 'path';
 
 import { PrimaryAppBar } from './Toolbar';
 import VirtualizedList from './VirtualizedList';
@@ -183,7 +184,20 @@ const PageDependencyTree = props => {
           [setIsLabelVisible]
         );
 
-        const { dependencyTree, getDotGraph, networkXGraph, addFilterPatterns } = props;
+        const { dependencyTree, getDotGraph, networkXGraph, addFilterPatterns, getGitLogs } = props;
+        // git logs need the filepath to resolve files with the root directory
+        const handleGetGitLogs = useCallback(
+          filename => {
+            if (filePath && filename) {
+              const absPath = path.resolve(filePath, filename);
+              getGitLogs(absPath);
+            }
+
+          },
+          [filePath, getGitLogs]
+        );
+
+
 
         // TODO: figure out how to only run this once with hooks. UseEffect doesn't work, but this is fine for now.
         const handleSetHierarchyProp = new Map();
@@ -277,7 +291,6 @@ const PageDependencyTree = props => {
         const events = {
           select: (event) => {
             const { nodes, edges } = event;
-            // console.log(event);
 
             if (nodes.length > 0 ) {
               setSelectedNode(nodes[0]);
@@ -326,8 +339,8 @@ const PageDependencyTree = props => {
             <PrimaryAppBar {...appBarProps} />
             <SplitPane split="vertical" minSize={250} defaultSize={defaultMapWidth} primary="first" onChange={size => setWidth(size)}>
               <div className={styles.graphContainer} style={{ width: storedWidth }}>
-                <div style={{ width: storedWidth, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  <Typography variant="h6" gutterLeft>
+                <div style={{ width: storedWidth, overflow: 'hidden', textOverflow: 'ellipsis', marginLeft: 10 }}>
+                  <Typography variant="h6">
                     {filePath && filePath}
                   </Typography>
                 </div>
@@ -355,7 +368,7 @@ const PageDependencyTree = props => {
                     </div>
                   </Grid>
                 </Grid>
-                <div>
+                <div style={{marginLeft: 20}}>
                   {selectedNode && <Typography variant="h6">
                       {selectedNode}
 
@@ -365,20 +378,17 @@ const PageDependencyTree = props => {
                         </IconButton>
                       </Tooltip>
 
-
                       <Tooltip title="Exclude file" placement="top-end">
-                        <IconButton aria-label="filter-file" onClick={handleFilterFile} color='secondary'>
+                        <IconButton aria-label="filter-file" onClick={handleFilterFile} color="secondary">
                           <InsertDriveFile />
                         </IconButton>
                       </Tooltip>
 
                       <Tooltip title="Exclude folder" placement="top-end">
-                        <IconButton aria-label="filter-folder" onClick={handleFilterFolder} color='secondary'>
+                        <IconButton aria-label="filter-folder" onClick={handleFilterFolder} color="secondary">
                           <FolderOpen />
                         </IconButton>
                       </Tooltip>
-
-
                     </Typography>}
                 </div>
 
@@ -394,6 +404,7 @@ const PageDependencyTree = props => {
                           height={200}
                           subtitle={`Uses (${successors.length})`}
                           onRowClick={handleSetSelectedNode}
+                          onSecondaryClick={handleGetGitLogs}
                         />
                       )}
                     </div>
@@ -407,6 +418,7 @@ const PageDependencyTree = props => {
                           height={200}
                           subtitle={`Used by (${predecessors.length})`}
                           onRowClick={handleSetSelectedNode}
+                          onSecondaryClick={handleGetGitLogs}
                         />
                       )}
                     </div>
