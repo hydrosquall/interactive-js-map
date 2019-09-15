@@ -10,9 +10,13 @@ import blue from '@material-ui/core/colors/blue';
 import green from '@material-ui/core/colors/green';
 import grey from '@material-ui/core/colors/grey';
 import Grid from '@material-ui/core/Grid';
+import Tooltip from '@material-ui/core/Tooltip';
 
 import IconButton from '@material-ui/core/IconButton';
 import ClearIcon from '@material-ui/icons/Clear';
+import FilterList from '@material-ui/icons/FilterList';
+import FolderOpen from '@material-ui/icons/FolderOpen';
+import InsertDriveFile from '@material-ui/icons/InsertDriveFile';
 
 import { remote } from 'electron';
 
@@ -20,6 +24,8 @@ import { PrimaryAppBar } from './Toolbar';
 import VirtualizedList from './VirtualizedList';
 
 import styles from './page-dependency-tree.css';
+
+import { dirname } from 'path';
 
 
 const { dialog } = remote; // Open file dialog
@@ -94,6 +100,12 @@ const getNodeColorEnriched = (enrichedNode) => {
   return DEFAULT_NODE_COLOR;
 };
 
+// Escape particular files
+// https://stackoverflow.com/questions/3561493/is-there-a-regexp-escape-function-in-javascript
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
+}
+
 const PageDependencyTree = props => {
         const visJsRef = useRef(null);
 
@@ -139,11 +151,9 @@ const PageDependencyTree = props => {
 
         const handleSetSelectedNode = useCallback(
           (node) => {
-            console.log(node);
             setSelectedNode(node);
             if (visJsRef !== null) {
               visJsRef.current.selectNodes( [node]);
-              visJsRef.current.redraw();
             }
           },
           [setSelectedNode, visJsRef]
@@ -173,6 +183,8 @@ const PageDependencyTree = props => {
           [setIsLabelVisible]
         );
 
+        const { dependencyTree, getDotGraph, networkXGraph, addFilterPatterns } = props;
+
         // TODO: figure out how to only run this once with hooks. UseEffect doesn't work, but this is fine for now.
         const handleSetHierarchyProp = new Map();
         // Build the handlers once - operate on handleSetHierarchyProp;
@@ -188,7 +200,24 @@ const PageDependencyTree = props => {
           );
         });
 
-        const { dependencyTree, getDotGraph, networkXGraph } = props;
+        // Filter buttons
+        const handleFilterFile = useCallback(
+          () => {
+            setSelectedNode(undefined);
+            addFilterPatterns([`^${escapeRegExp(selectedNode)}`]);
+
+          },
+          [addFilterPatterns, setSelectedNode, selectedNode]
+        );
+        const handleFilterFolder = useCallback(
+          () => {
+            setSelectedNode(undefined);
+            addFilterPatterns([`^${escapeRegExp(dirname(selectedNode))}\/*`]);
+
+          },
+          [addFilterPatterns, setSelectedNode, selectedNode]
+        );
+
         const hasNodes = dependencyTree && dependencyTree.nodes.length > 0;
         const pageWidth = window.innerWidth;
         const defaultMapWidth = pageWidth * DEFAULT_MAP_FRACTION; // sizing based on vega-lite sizing
@@ -287,6 +316,12 @@ const PageDependencyTree = props => {
           .filter(node => node.inDegree === 0 && node.outDegree !== 0)
           .map(node => node.id);
 
+        const successors = networkXGraph && networkXGraph.hasNode(selectedNode) ? networkXGraph.successors(
+                            selectedNode
+                          ): [];
+
+        const predecessors = networkXGraph && networkXGraph.hasNode(selectedNode) ? networkXGraph.predecessors(selectedNode) : [];
+
         return <div>
             <PrimaryAppBar {...appBarProps} />
             <SplitPane split="vertical" minSize={250} defaultSize={defaultMapWidth} primary="first" onChange={size => setWidth(size)}>
@@ -296,11 +331,7 @@ const PageDependencyTree = props => {
                     {filePath && filePath}
                   </Typography>
                 </div>
-                {hasNodes && <Graph
-                  graph={graph}
-                  options={visJsGraphOptions}
-                  events={events}
-                  getNetwork={network => {
+                {hasNodes && <Graph graph={graph} options={visJsGraphOptions} events={events} getNetwork={network => {
                       visJsRef.current = network;
                     }} />}
                 <ControlPanel />
@@ -315,7 +346,9 @@ const PageDependencyTree = props => {
                           itemData={rootNodes}
                           width={secondPaneWidth}
                           height={200}
-                          subtitle={`"Root" Files (${rootNodes.length}) - Probable Entrypoints`}
+                          subtitle={`"Root" Files (${
+                            rootNodes.length
+                          }) - Probable Entrypoints`}
                           onRowClick={handleSetSelectedNode}
                         />
                       )}
@@ -325,9 +358,27 @@ const PageDependencyTree = props => {
                 <div>
                   {selectedNode && <Typography variant="h6">
                       {selectedNode}
-                      <IconButton edge="end" aria-label="search" onClick={() => setSelectedNode(undefined)}>
-                        <ClearIcon />
-                      </IconButton>
+
+                      <Tooltip title="Close detail" placement="top-end">
+                        <IconButton aria-label="clear" onClick={() => setSelectedNode(undefined)}>
+                          <ClearIcon />
+                        </IconButton>
+                      </Tooltip>
+
+
+                      <Tooltip title="Exclude file" placement="top-end">
+                        <IconButton aria-label="filter-file" onClick={handleFilterFile} color='secondary'>
+                          <InsertDriveFile />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title="Exclude folder" placement="top-end">
+                        <IconButton aria-label="filter-folder" onClick={handleFilterFolder} color='secondary'>
+                          <FolderOpen />
+                        </IconButton>
+                      </Tooltip>
+
+
                     </Typography>}
                 </div>
 
@@ -338,12 +389,10 @@ const PageDependencyTree = props => {
                     <div>
                       {selectedNode && (
                         <VirtualizedList
-                          itemData={networkXGraph.successors(
-                            selectedNode
-                          )}
+                          itemData={successors}
                           width={secondPaneWidth / 2}
                           height={200}
-                          subtitle={'Uses'}
+                          subtitle={`Uses (${successors.length})`}
                           onRowClick={handleSetSelectedNode}
                         />
                       )}
@@ -353,12 +402,10 @@ const PageDependencyTree = props => {
                     <div>
                       {selectedNode && (
                         <VirtualizedList
-                          itemData={networkXGraph.predecessors(
-                            selectedNode
-                          )}
+                          itemData={predecessors}
                           width={secondPaneWidth / 2}
                           height={200}
-                          subtitle={'Is used by'}
+                          subtitle={`Used by (${predecessors.length})`}
                           onRowClick={handleSetSelectedNode}
                         />
                       )}

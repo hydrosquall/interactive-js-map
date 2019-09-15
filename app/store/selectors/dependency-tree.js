@@ -14,8 +14,20 @@ export const dotGraph$ = createSelector(
   dependencyTree => dependencyTree.dotGraph
 );
 
+export const filterPatterns$ = createSelector( dependencyTreeState$,
+  dependencyTree => dependencyTree.filterPatterns
+);
+
+export const filterRegex$ = createSelector(filterPatterns$, filterPatterns => {
+  // Prevent bug with empty strings.
+    return filterPatterns.filter(pattern => pattern.length > 0)
+                         .map(pattern => new RegExp(pattern))
+  }
+);
+
+
 // return object of nodes and edges suitable for vis-network package.
-export const visNetworkGraph$ = createSelector(
+export const visNetworkGraphRaw$ = createSelector(
   dotGraph$,
   dotString => {
     if (!dotString) {
@@ -26,10 +38,24 @@ export const visNetworkGraph$ = createSelector(
     }
       const graph = network.convertDot(dotString);
       return {
-        nodes: graph.nodes, //.map(node => ({...node })),
-        // nodes: graph.nodes.map(node => ({ id: node.id })),
+        nodes: graph.nodes,
         edges: graph.edges
       };
+  }
+);
+
+// Apply the official filtered graph.
+export const visNetworkGraph$ = createSelector(
+  visNetworkGraphRaw$, filterRegex$,
+  (graph, filterRegex) => {
+    console.log({filterRegex});
+    const newGraph = {
+      // If anything matches, drop it.
+      nodes: graph.nodes.filter(node => !filterRegex.some(pattern => pattern.test(node.id))),
+      edges: graph.edges.filter(edge => !filterRegex.some(pattern => pattern.test(edge.from) || pattern.test(edge.to)))
+    };
+    console.log(newGraph);
+    return newGraph;
   }
 );
 

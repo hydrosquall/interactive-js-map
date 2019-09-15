@@ -7,6 +7,7 @@ import { createMuiTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
 import blueGrey from '@material-ui/core/colors/blueGrey';
 import green from '@material-ui/core/colors/green';
+import red from '@material-ui/core/colors/red';
 
 import type { Store } from '../reducers/types';
 import Routes from '../Routes';
@@ -16,11 +17,13 @@ const theme = createMuiTheme({
     primary: {
       main: green[800] // intense green
     },
-    secondary: green
+    secondary: {
+      main: red[200] // intense red
+    }
   },
   status: {
-    danger: 'orange'
-  }
+    danger: 'orange',
+  },
 });
 
 const Root = (props) => {

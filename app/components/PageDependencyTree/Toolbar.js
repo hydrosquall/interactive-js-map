@@ -1,6 +1,15 @@
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { remote } from 'electron';
 import { Link } from 'react-router-dom';
+
+// import { connect } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux'
+
+// Redux machinery
+import { setFilterPatterns } from '../../store/actions/dependency-tree';
+import {
+  filterPatterns$
+} from '../../store/selectors/dependency-tree';
 
 import AppBar from '@material-ui/core/AppBar';
 import IconButton from '@material-ui/core/IconButton';
@@ -10,9 +19,18 @@ import { fade, makeStyles } from '@material-ui/core/styles';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import FolderOpen from '@material-ui/icons/FolderOpen';
-// import MenuIcon from '@material-ui/icons/MenuIcon';
+
 import Loop from '@material-ui/icons/Loop';
 import SettingsApplications from '@material-ui/icons/SettingsApplications';
+
+import Dialog from '@material-ui/core/Dialog';
+import DialogActions from '@material-ui/core/DialogActions';
+import DialogContent from '@material-ui/core/DialogContent';
+import DialogContentText from '@material-ui/core/DialogContentText';
+import DialogTitle from '@material-ui/core/DialogTitle';
+import TextField from '@material-ui/core/TextField';
+import Button from '@material-ui/core/Button';
+
 
 import routes from '../../constants/routes';
 
@@ -80,42 +98,73 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
+function SimpleDialog(props) {
+  const classes = useStyles();
+  const { onClose, open } = props;
+
+  const patterns = useSelector(filterPatterns$); // just strings
+  const patternString = patterns.join('\n')
+  const [ rawPatterns, setRawPatterns ] = useState(patternString);
+
+  const handleClose = useCallback((event) => {
+    onClose();
+  }, [onClose]);
+  const dispatch = useDispatch();
+  const handleCloseAndSave = useCallback((event) => {
+    onClose();
+    dispatch(setFilterPatterns(rawPatterns.split('\n')));
+  }, [setRawPatterns, rawPatterns]);
+
+  // Update internal state when open changes to pull down the new selector
+  useEffect(() => {
+    setRawPatterns(patternString);
+  }, [patternString])
+
+  const handleTextChange = useCallback((event) => setRawPatterns(event.target.value), [setRawPatterns]);
+
+  return (
+    <Dialog onClose={handleClose} aria-labelledby="simple-dialog-title" open={open}>
+      <DialogTitle id="simple-dialog-title">Set Exclusion Patterns</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          Exclude files with these REGEX patterns. Uses JS for client-side filtering.
+        </DialogContentText>
+        <TextField
+              autoFocus
+              margin="dense"
+              id="filterPatterns"
+              label="Enter Exclusion Patterns, 1 per line"
+              multiline
+              rowsMax="10"
+              fullWidth
+              value={rawPatterns}
+              onChange={handleTextChange}
+              />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} color="default">
+          Close + Discard Changes
+        </Button>
+        <Button onClick={handleCloseAndSave} color="primary">
+          Save Filters
+        </Button>
+      </DialogActions>
+    </Dialog>);
+}
+
 
 export function PrimaryAppBar(props) {
   const classes = useStyles();
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
 
-  const isMenuOpen = Boolean(anchorEl);
-  const isMobileMenuOpen = Boolean(mobileMoreAnchorEl);
-
-  function handleProfileMenuOpen(event) {
-    setAnchorEl(event.currentTarget);
+  function handleDialogOpen(event) {
+    setIsDialogOpen(true);
   }
 
-
-  function handleMenuClose() {
-    setAnchorEl(null);
-    handleMobileMenuClose();
+  function handleDialogClose() {
+    setIsDialogOpen(false);
   }
-
-
-  const menuId = 'primary-search-account-menu';
-  const renderMenu = (
-    <Menu
-      anchorEl={anchorEl}
-      anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
-      id={menuId}
-      keepMounted
-      transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-      open={isMenuOpen}
-      onClose={handleMenuClose}
-    >
-      <MenuItem onClick={handleMenuClose}>Profile</MenuItem>
-      <MenuItem onClick={handleMenuClose}>My account</MenuItem>
-    </Menu>
-  );
-
 
   return <div className={classes.grow}>
       <AppBar position="static">
@@ -128,11 +177,9 @@ export function PrimaryAppBar(props) {
           <Typography className={classes.title} variant="h6" noWrap>
             <Link to={routes.HOME}>Dependencies</Link>
           </Typography>
-          <div style={{width: 10}}>
-
-          </div>
+          <div style={{ width: 10 }} />
           <Typography className={classes.title} variant="h6" noWrap>
-            <Link to={routes.FILETREE} >FileTree</Link>
+            <Link to={routes.FILETREE}>FileTree</Link>
           </Typography>
 
           {/* <div className={classes.search}>
@@ -149,12 +196,12 @@ export function PrimaryAppBar(props) {
             <IconButton onClick={props.handleOpenFileClick} color="inherit">
               <FolderOpen />
             </IconButton>
-            {/* <IconButton edge="end" onClick={handleProfileMenuOpen} color="inherit">
+            <IconButton edge="end" onClick={handleDialogOpen} color="inherit">
               <SettingsApplications />
-            </IconButton> */}
+            </IconButton>
           </div>
         </Toolbar>
       </AppBar>
-      {renderMenu}
+      <SimpleDialog open={isDialogOpen} onClose={handleDialogClose} />
     </div>;
 }
