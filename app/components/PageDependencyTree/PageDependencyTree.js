@@ -5,23 +5,26 @@ import Graph from 'react-graph-vis';
 import * as dg from 'dis-gui';
 import SplitPane from 'react-split-pane';
 import Typography from '@material-ui/core/Typography';
-import red from '@material-ui/core/colors/red';
-import blue from '@material-ui/core/colors/blue';
-import green from '@material-ui/core/colors/green';
-import grey from '@material-ui/core/colors/grey';
-import Grid from '@material-ui/core/Grid';
-import Tooltip from '@material-ui/core/Tooltip';
 
+import Tooltip from '@material-ui/core/Tooltip';
+import Grid from '@material-ui/core/Grid';
 import IconButton from '@material-ui/core/IconButton';
 import ClearIcon from '@material-ui/icons/Clear';
 import FilterList from '@material-ui/icons/FilterList';
 import FolderOpen from '@material-ui/icons/FolderOpen';
 import InsertDriveFile from '@material-ui/icons/InsertDriveFile';
 
-
 import { PrimaryAppBar } from './Toolbar';
 import FileList from './FileList';
 import CommitTree from './CommitTree';
+import {
+  DEFAULT_NODE_COLOR,
+  ROOT_NODE_COLOR,
+  SELECTED_NODE_COLOR,
+  SELECTED_NODE_OUTLINE,
+  LEAF_NODE_COLOR,
+  ISLAND_NODE_COLOR
+} from './constants';
 
 import styles from './page-dependency-tree.css';
 import { dirname, resolve } from 'path';
@@ -31,10 +34,7 @@ import { remote } from 'electron';
 // Placeholder
 const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
 const DEFAULT_MAP_FRACTION = 0.5;
-const DEFAULT_NODE_COLOR = blue[100];
-const ROOT_NODE_COLOR = grey[500];
-const SELECTED_NODE_COLOR = red[100];
-const SELECTED_NODE_OUTLINE = red[500];
+
 
 // Mini reducer
 const SET_HIERARCHY_PROPERTY = 'SET_HIERARCHY_PROPERTY';
@@ -65,7 +65,7 @@ const hierarchyReducer = (state, action) => {
 const getNodeColor = (nodeId, graph) => {
   const isLeafNode = graph.outDegree(nodeId) === 0;
   if (isLeafNode) { // only ever gets imported
-    return green[100];
+    return LEAF_NODE_COLOR;
   }
 
   const isRootNode = graph.inDegree(nodeId) === 0; // only exports things, could be an entrypoint
@@ -80,14 +80,14 @@ const getNodeColorEnriched = (enrichedNode) => {
   const isIsland = enrichedNode.outDegree === 0 && enrichedNode.inDegree === 0;
   if (isIsland) {
     // only ever gets imported
-    return grey[200];
+    return ISLAND_NODE_COLOR;
   }
 
 
   const isLeafNode = enrichedNode.outDegree === 0;
   if (isLeafNode) {
     // only ever gets imported
-    return green[100];
+    return LEAF_NODE_COLOR;
   }
 
   // No parents, but does have children.
@@ -402,7 +402,7 @@ const PageDependencyTree = props => {
                         <FileList
                           itemData={successors}
                           width={secondPaneWidth / 2}
-                          height={200}
+                          height={240}
                           subtitle={`Uses (${successors.length})`}
                           onRowClick={handleSetSelectedNode}
                           onSecondaryClick={handleGetGitLogs}
@@ -416,7 +416,7 @@ const PageDependencyTree = props => {
                         <FileList
                           itemData={predecessors}
                           width={secondPaneWidth / 2}
-                          height={200}
+                          height={240}
                           subtitle={`Used by (${predecessors.length})`}
                           onRowClick={handleSetSelectedNode}
                           onSecondaryClick={handleGetGitLogs}

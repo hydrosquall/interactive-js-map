@@ -4,7 +4,14 @@ import { Link } from 'react-router-dom';
 
 // import { connect } from 'react-redux';
 import { useSelector, useDispatch } from 'react-redux'
-
+import {
+  DEFAULT_NODE_COLOR,
+  ROOT_NODE_COLOR,
+  SELECTED_NODE_COLOR,
+  SELECTED_NODE_OUTLINE,
+  LEAF_NODE_COLOR,
+  ISLAND_NODE_COLOR
+} from './constants';
 // Redux machinery
 import { setFilterPatterns } from '../../store/actions/dependency-tree';
 import {
@@ -154,6 +161,47 @@ function FilterDialog(props) {
     </Dialog>);
 }
 
+const Swatch = (props) => <div style={{ backgroundColor: props.color, height: 14, width:  14, display: 'inline-block', marginRight: 10}}></div>;
+
+function HelpDialog(props) {
+  const classes = useStyles();
+  const { onClose, open } = props;
+
+  const handleClose = useCallback(
+    event => {
+      onClose();
+    },
+    [onClose]
+  );
+
+  return <Dialog onClose={handleClose} aria-labelledby="simple-dialog-title" open={open}>
+      <DialogTitle>Dependencies Legend</DialogTitle>
+      <DialogContent>
+        <DialogContentText>
+          <Swatch color={ROOT_NODE_COLOR} />
+          Root nodes have no parents
+        </DialogContentText>
+        <DialogContentText>
+          <Swatch color={LEAF_NODE_COLOR} />
+          Leaf nodes have no children
+        </DialogContentText>
+        <DialogContentText>
+          <Swatch color={DEFAULT_NODE_COLOR} />
+          Regular nodes have parents and children
+        </DialogContentText>
+        <DialogContentText>
+          <Swatch color={ISLAND_NODE_COLOR} />
+          Island nodes lack parents and children
+        </DialogContentText>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={handleClose} color="default">
+          Close
+        </Button>
+      </DialogActions>
+    </Dialog>;
+}
+
 
 export function PrimaryAppBar(props) {
   const classes = useStyles();
@@ -167,6 +215,20 @@ export function PrimaryAppBar(props) {
   const handleFilterDialogClose = useCallback((event) => {
     setIsFilterDialogOpen(false);
   }, [setIsFilterDialogOpen]);
+
+  const handleHelpDialogOpen = useCallback(
+    event => {
+      setIsHelpDialogOpen(true);
+    },
+    [setIsHelpDialogOpen]
+  );
+
+  const handleHelpDialogClose = useCallback(
+    event => {
+      setIsHelpDialogOpen(false);
+    },
+    [setIsHelpDialogOpen]
+  );
 
 
   return <div className={classes.grow}>
@@ -184,6 +246,9 @@ export function PrimaryAppBar(props) {
           <Typography className={classes.title} variant="h6" noWrap>
             <Link to={routes.FILETREE}>FileTree</Link>
           </Typography>
+          <IconButton edge="end" onClick={handleHelpDialogOpen} color="inherit">
+            <Help />
+          </IconButton>
 
           {/* <div className={classes.search}>
             <div className={classes.searchIcon}>
@@ -202,12 +267,10 @@ export function PrimaryAppBar(props) {
             <IconButton onClick={handleFilterDialogOpen} color="inherit">
               <SettingsApplications />
             </IconButton>
-            <IconButton edge="end" onClick={handleFilterDialogOpen} color="inherit">
-              <Help />
-            </IconButton>
           </div>
         </Toolbar>
       </AppBar>
       <FilterDialog open={isFilterDialogOpen} onClose={handleFilterDialogClose} />
+      <HelpDialog open={isHelpDialogOpen} onClose={handleHelpDialogClose} />
     </div>;
 }
