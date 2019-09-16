@@ -19,6 +19,8 @@ import { fade, makeStyles } from '@material-ui/core/styles';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import FolderOpen from '@material-ui/icons/FolderOpen';
+import Help from '@material-ui/icons/Help';
+
 
 import Loop from '@material-ui/icons/Loop';
 import SettingsApplications from '@material-ui/icons/SettingsApplications';
@@ -98,7 +100,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-function SimpleDialog(props) {
+function FilterDialog(props) {
   const classes = useStyles();
   const { onClose, open } = props;
 
@@ -155,16 +157,17 @@ function SimpleDialog(props) {
 
 export function PrimaryAppBar(props) {
   const classes = useStyles();
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [mobileMoreAnchorEl, setMobileMoreAnchorEl] = React.useState(null);
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
 
-  function handleDialogOpen(event) {
-    setIsDialogOpen(true);
-  }
+  const handleFilterDialogOpen = useCallback((event) => {
+    setIsFilterDialogOpen(true);
+  }, [setIsFilterDialogOpen]);
 
-  function handleDialogClose() {
-    setIsDialogOpen(false);
-  }
+  const handleFilterDialogClose = useCallback((event) => {
+    setIsFilterDialogOpen(false);
+  }, [setIsFilterDialogOpen]);
+
 
   return <div className={classes.grow}>
       <AppBar position="static">
@@ -196,12 +199,15 @@ export function PrimaryAppBar(props) {
             <IconButton onClick={props.handleOpenFileClick} color="inherit">
               <FolderOpen />
             </IconButton>
-            <IconButton edge="end" onClick={handleDialogOpen} color="inherit">
+            <IconButton onClick={handleFilterDialogOpen} color="inherit">
               <SettingsApplications />
+            </IconButton>
+            <IconButton edge="end" onClick={handleFilterDialogOpen} color="inherit">
+              <Help />
             </IconButton>
           </div>
         </Toolbar>
       </AppBar>
-      <SimpleDialog open={isDialogOpen} onClose={handleDialogClose} />
+      <FilterDialog open={isFilterDialogOpen} onClose={handleFilterDialogClose} />
     </div>;
 }
