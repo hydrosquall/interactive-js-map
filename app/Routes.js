@@ -10,7 +10,7 @@ import PageFileTree from './components/PageFileTree';
 export default () => (
   <App>
     <Switch>
-      <Route path={routes.HOME} exact={true} render={() => <PageDependencyTree />} />
+      <Route path={routes.DEPENDENCIES} exact={true} render={() => <PageDependencyTree />} />
       <Route path={routes.FILETREE} render={() => <PageFileTree />} />
     </Switch>
   </App>

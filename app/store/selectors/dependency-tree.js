@@ -3,7 +3,6 @@ import { network } from 'vis-network';
 import { groupBy, pick, pipe, map } from 'lodash/fp';
 import { parse } from 'date-fns/esm'
 
-
 import { DiGraph } from 'jsnetworkx';
 
 import { DEPENDENCY_TREE_REDUCER_KEY } from '../constants';

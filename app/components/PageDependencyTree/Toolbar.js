@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { remote } from 'electron';
 import { Link } from 'react-router-dom';
 
-// import { connect } from 'react-redux';
 import { useSelector, useDispatch } from 'react-redux'
 import {
   DEFAULT_NODE_COLOR,
@@ -17,6 +16,8 @@ import { setFilterPatterns } from '../../store/actions/dependency-tree';
 import {
   filterPatterns$
 } from '../../store/selectors/dependency-tree';
+import { pathname$ } from '../../store/selectors/router';
+
 
 import AppBar from '@material-ui/core/AppBar';
 import IconButton from '@material-ui/core/IconButton';
@@ -230,6 +231,10 @@ export function PrimaryAppBar(props) {
     [setIsHelpDialogOpen]
   );
 
+  const pathname = useSelector(pathname$);
+
+  const isDependencyTree = pathname === routes.DEPENDENCIES;
+
 
   return <div className={classes.grow}>
       <AppBar position="static">
@@ -240,15 +245,15 @@ export function PrimaryAppBar(props) {
             <MenuIcon />
           </IconButton> */}
           <Typography className={classes.title} variant="h6" noWrap>
-            <Link to={routes.HOME}>Dependencies</Link>
+            <Link to={routes.DEPENDENCIES}>Dependencies</Link>
           </Typography>
           <div style={{ width: 10 }} />
           <Typography className={classes.title} variant="h6" noWrap>
             <Link to={routes.FILETREE}>FileTree</Link>
           </Typography>
-          <IconButton edge="end" onClick={handleHelpDialogOpen} color="inherit">
+          {isDependencyTree && <IconButton edge="end" onClick={handleHelpDialogOpen} color="inherit">
             <Help />
-          </IconButton>
+          </IconButton>}
 
           {/* <div className={classes.search}>
             <div className={classes.searchIcon}>
@@ -264,9 +269,9 @@ export function PrimaryAppBar(props) {
             <IconButton onClick={props.handleOpenFileClick} color="inherit">
               <FolderOpen />
             </IconButton>
-            <IconButton onClick={handleFilterDialogOpen} color="inherit">
+            {isDependencyTree  && <IconButton onClick={handleFilterDialogOpen} color="inherit">
               <SettingsApplications />
-            </IconButton>
+            </IconButton>}
           </div>
         </Toolbar>
       </AppBar>

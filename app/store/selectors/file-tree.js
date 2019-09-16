@@ -13,7 +13,7 @@ export const fileTree$ = createSelector(
   state => state.fileTree
 );
 
-const ALLOW_FILES = false;
+const ALLOW_FILES = true;
 
 export const fileTreeList$ = createSelector(
   fileTree$,

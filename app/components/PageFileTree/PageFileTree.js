@@ -24,10 +24,8 @@ const PageFileTree = props => {
 
   const handleOpenFileOrDirectory = useCallback(
     () => {
-      // Note: on windows or linux, a dialog is only allowed to open one, not both
-      // As a result, that would lead to just opening a directory dialogy.
       dialog
-        .showOpenDialog({ properties: ['openFile', 'openDirectory'] })
+        .showOpenDialog({ properties: ['openDirectory'] })
         .then(payload => {
           const { canceled, filePaths } = payload;
           if (canceled) {
