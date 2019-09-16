@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { remote } from 'electron';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 
 import { useSelector, useDispatch } from 'react-redux'
 import {
@@ -21,6 +21,9 @@ import { pathname$ } from '../../store/selectors/router';
 
 import AppBar from '@material-ui/core/AppBar';
 import IconButton from '@material-ui/core/IconButton';
+import SearchIcon from '@material-ui/icons/Search';
+import InputBase from '@material-ui/core/InputBase';
+
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
 import { fade, makeStyles } from '@material-ui/core/styles';
@@ -245,22 +248,26 @@ export function PrimaryAppBar(props) {
             <MenuIcon />
           </IconButton> */}
           <Typography className={classes.title} variant="h6" noWrap>
-            <Link to={routes.DEPENDENCIES}>Dependencies</Link>
+            <NavLink activeStyle={{ color: 'yellow' }} to={routes.DEPENDENCIES}>
+              Dependencies
+            </NavLink>
           </Typography>
           <div style={{ width: 10 }} />
           <Typography className={classes.title} variant="h6" noWrap>
-            <Link to={routes.FILETREE}>FileTree</Link>
+            <NavLink activeStyle={{ color: 'yellow' }} to={routes.FILETREE}>
+              FileTree
+            </NavLink>
           </Typography>
           {isDependencyTree && <IconButton edge="end" onClick={handleHelpDialogOpen} color="inherit">
-            <Help />
-          </IconButton>}
+              <Help />
+            </IconButton>}
 
-          {/* <div className={classes.search}>
+          <div className={classes.search}>
             <div className={classes.searchIcon}>
               <SearchIcon />
             </div>
             <InputBase placeholder="Search…" classes={{ root: classes.inputRoot, input: classes.inputInput }} inputProps={{ 'aria-label': 'search' }} />
-          </div> */}
+          </div>
           <div className={classes.grow} />
           <div className={classes.sectionDesktop}>
             <IconButton onClick={props.fetchTree} color="inherit">
@@ -269,9 +276,9 @@ export function PrimaryAppBar(props) {
             <IconButton onClick={props.handleOpenFileClick} color="inherit">
               <FolderOpen />
             </IconButton>
-            {isDependencyTree  && <IconButton onClick={handleFilterDialogOpen} color="inherit">
-              <SettingsApplications />
-            </IconButton>}
+            {isDependencyTree && <IconButton onClick={handleFilterDialogOpen} color="inherit">
+                <SettingsApplications />
+              </IconButton>}
           </div>
         </Toolbar>
       </AppBar>
