@@ -2,22 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { remote } from 'electron';
 import { NavLink } from 'react-router-dom';
 
-import { useSelector, useDispatch } from 'react-redux'
-import {
-  DEFAULT_NODE_COLOR,
-  ROOT_NODE_COLOR,
-  SELECTED_NODE_COLOR,
-  SELECTED_NODE_OUTLINE,
-  LEAF_NODE_COLOR,
-  ISLAND_NODE_COLOR
-} from './constants';
-// Redux machinery
-import { setFilterPatterns } from '../../store/actions/dependency-tree';
-import {
-  filterPatterns$
-} from '../../store/selectors/dependency-tree';
-import { pathname$ } from '../../store/selectors/router';
-
+import { useSelector, useDispatch } from 'react-redux';
 
 import AppBar from '@material-ui/core/AppBar';
 import IconButton from '@material-ui/core/IconButton';
@@ -44,17 +29,24 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 
-
+import {
+  DEFAULT_NODE_COLOR,
+  ROOT_NODE_COLOR,
+  SELECTED_NODE_COLOR,
+  SELECTED_NODE_OUTLINE,
+  LEAF_NODE_COLOR,
+  ISLAND_NODE_COLOR
+} from './constants';
+// Redux machinery
+import { setFilterPatterns } from '../../store/actions/dependency-tree';
+import { filterPatterns$ } from '../../store/selectors/dependency-tree';
+import { pathname$ } from '../../store/selectors/router';
 import routes from '../../constants/routes';
-
-
-const { dialog } = remote; // Open file dialog
 
 // Placeholder
 const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
 
 // Theming pattern
-
 const useStyles = makeStyles(theme => ({
   grow: {
     flexGrow: 1
@@ -237,6 +229,7 @@ export function PrimaryAppBar(props) {
   const pathname = useSelector(pathname$);
 
   const isDependencyTree = pathname === routes.DEPENDENCIES;
+  const isFileTree = pathname === routes.FILETREE;
 
 
   return <div className={classes.grow}>
@@ -248,7 +241,7 @@ export function PrimaryAppBar(props) {
             <MenuIcon />
           </IconButton> */}
           <Typography className={classes.title} variant="h6" noWrap>
-            <NavLink activeStyle={{ color: 'yellow' }} to={routes.DEPENDENCIES}>
+            <NavLink exact activeStyle={{ color: 'yellow' }} to={routes.DEPENDENCIES}>
               Dependencies
             </NavLink>
           </Typography>
@@ -262,12 +255,13 @@ export function PrimaryAppBar(props) {
               <Help />
             </IconButton>}
 
-          <div className={classes.search}>
+          {isFileTree && <div className={classes.search}>
             <div className={classes.searchIcon}>
               <SearchIcon />
             </div>
             <InputBase placeholder="Search…" classes={{ root: classes.inputRoot, input: classes.inputInput }} inputProps={{ 'aria-label': 'search' }} />
-          </div>
+          </div>}
+
           <div className={classes.grow} />
           <div className={classes.sectionDesktop}>
             <IconButton onClick={props.fetchTree} color="inherit">
