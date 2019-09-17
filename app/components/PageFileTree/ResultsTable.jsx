@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
@@ -54,7 +54,7 @@ const headCells = [
     disablePadding: true,
     label: 'Match'
   },
-  { id: 'file', numeric: false, disablePadding: false, label: 'Calories' },
+  { id: 'file', numeric: false, disablePadding: true, label: 'File' },
 ];
 
 function EnhancedTableHead(props) {
@@ -109,63 +109,9 @@ EnhancedTableHead.propTypes = {
   rowCount: PropTypes.number.isRequired
 };
 
-const useToolbarStyles = makeStyles(theme => ({
-  root: {
-    paddingLeft: theme.spacing(2),
-    paddingRight: theme.spacing(1)
-  },
-  highlight:
-    theme.palette.type === 'light'
-      ? {
-          color: theme.palette.secondary.main,
-          backgroundColor: lighten(theme.palette.secondary.light, 0.85)
-        }
-      : {
-          color: theme.palette.text.primary,
-          backgroundColor: theme.palette.secondary.dark
-        },
-  spacer: {
-    flex: '1 1 100%'
-  },
-  actions: {
-    color: theme.palette.text.secondary
-  },
-  title: {
-    flex: '0 0 auto'
-  }
-}));
-
-const EnhancedTableToolbar = props => {
-  const classes = useToolbarStyles();
-  const { numSelected } = props;
-
-  return (
-    <Toolbar
-      className={clsx(classes.root)}
-    >
-      <div className={classes.title}>
-        {false ? (
-          <Typography color="inherit" variant="subtitle1">
-            {numSelected} selected
-          </Typography>
-        ) : (
-          <Typography variant="h6" id="tableTitle">
-            Ripgrep Results
-          </Typography>
-        )}
-      </div>
-
-    </Toolbar>
-  );
-};
-
-EnhancedTableToolbar.propTypes = {
-  numSelected: PropTypes.number.isRequired
-};
-
 const useStyles = makeStyles(theme => ({
   root: {
-    width: '100%',
+    // width: '100%',
     marginTop: theme.spacing(3)
   },
   paper: {
@@ -173,7 +119,7 @@ const useStyles = makeStyles(theme => ({
     marginBottom: theme.spacing(2)
   },
   table: {
-    minWidth: 750
+    minWidth: 750,
   },
   tableWrapper: {
     overflowX: 'auto'
@@ -194,48 +140,24 @@ const useStyles = makeStyles(theme => ({
 export function ResultsTable(props) {
   const classes = useStyles();
 
-  const {rows} = props;
+  const [order, setOrder] = useState('asc');
 
-  const [order, setOrder] = React.useState('asc');
-  const [orderBy, setOrderBy] = React.useState('calories');
-  const [selected, setSelected] = React.useState([]);
-  const [page, setPage] = React.useState(0);
-  const [dense, setDense] = React.useState(false);
-  const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  // if true, use the groupby version!
+  const [isByFile, setIsByFile] = useState(false);
+
+  const rows = isByFile ? props.rowsByGroup : props.rows;
+
+  const handleToggleIsByFile = useCallback(event => {
+    setIsByFile(event.target.checked);
+  }, [setIsByFile])
+
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   function handleRequestSort(event, property) {
     const isDesc = orderBy === property && order === 'desc';
     setOrder(isDesc ? 'asc' : 'desc');
     setOrderBy(property);
-  }
-
-  function handleSelectAllClick(event) {
-    if (event.target.checked) {
-      const newSelecteds = rows.map(n => n.name);
-      setSelected(newSelecteds);
-      return;
-    }
-    setSelected([]);
-  }
-
-  function handleClick(event, name) {
-    const selectedIndex = selected.indexOf(name);
-    let newSelected = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, name);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selected.slice(1));
-    } else if (selectedIndex === selected.length - 1) {
-      newSelected = newSelected.concat(selected.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selected.slice(0, selectedIndex),
-        selected.slice(selectedIndex + 1)
-      );
-    }
-
-    setSelected(newSelected);
   }
 
   function handleChangePage(event, newPage) {
@@ -247,34 +169,16 @@ export function ResultsTable(props) {
     setPage(0);
   }
 
-  function handleChangeDense(event) {
-    setDense(event.target.checked);
-  }
-
-
   const emptyRows =
     rowsPerPage - Math.min(rowsPerPage, rows.length - page * rowsPerPage);
 
-  return (
-    <div className={classes.root}>
+  return <div className={classes.root} style={{ width: props.width }}>
       <Paper className={classes.paper}>
-        {/* <EnhancedTableToolbar numSelected={selected.length} /> */}
         <div className={classes.tableWrapper}>
-          <Table
-            className={classes.table}
-            aria-labelledby="tableTitle"
-            size={'small'}
-          >
-            <EnhancedTableHead
-              classes={classes}
-              numSelected={selected.length}
-              order={order}
-              orderBy={orderBy}
-              onRequestSort={handleRequestSort}
-              rowCount={rows.length}
-            />
+          <Table className={classes.table} aria-labelledby="tableTitle" size={'small'}>
+            <EnhancedTableHead classes={classes} order={order} onRequestSort={handleRequestSort} rowCount={rows.length} />
             <TableBody>
-              {stableSort(rows, getSorting(order, orderBy))
+              {(rows )
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, index) => {
                   const labelId = `enhanced-table-checkbox-${index}`;
@@ -290,40 +194,29 @@ export function ResultsTable(props) {
                         id={labelId}
                         scope="row"
                         padding="none"
+                        style={{ fontFamily: 'monospace' }}
                       >
                         {row.match}
                       </TableCell>
-                      <TableCell align="right">{row.file}</TableCell>
-
+                      <TableCell
+                        align="right"
+                        style={{ fontFamily: 'monospace' }}
+                      >
+                        {row.file}
+                      </TableCell>
                     </TableRow>
                   );
                 })}
-              {emptyRows > 0 && (
-                <TableRow style={{ height: 49 * emptyRows }}>
+              {emptyRows > 0 && <TableRow style={{ height: 49 * emptyRows }}>
                   <TableCell colSpan={6} />
-                </TableRow>
-              )}
+                </TableRow>}
             </TableBody>
           </Table>
         </div>
-        <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
-          component="div"
-          count={rows.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          backIconButtonProps={{
-            'aria-label': 'previous page'
-          }}
-          nextIconButtonProps={{
-            'aria-label': 'next page'
-          }}
-          onChangePage={handleChangePage}
-          onChangeRowsPerPage={handleChangeRowsPerPage}
-        />
+        <TablePagination style={{ width: props.width }} rowsPerPageOptions={[5, 10, 25]} component="div" count={rows.length} rowsPerPage={rowsPerPage} page={page} backIconButtonProps={{ 'aria-label': 'previous page' }} nextIconButtonProps={{ 'aria-label': 'next page' }} onChangePage={handleChangePage} onChangeRowsPerPage={handleChangeRowsPerPage} />
       </Paper>
-    </div>
-  );
+      <FormControlLabel control={<Switch checked={isByFile} onChange={handleToggleIsByFile} />} label="Group by File" />
+    </div>;
 }
 
 export default {

@@ -1,9 +1,9 @@
 import React, { useCallback, useState, useRef } from 'react';
 import Cytoscape from 'cytoscape';
-
 import { remote } from 'electron';
 import CytoscapeComponent from 'react-cytoscapejs';
 import dagre from 'cytoscape-dagre';
+import SplitPane from 'react-split-pane';
 
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -22,6 +22,8 @@ Cytoscape.use(dagre);
 
 const { dialog } = remote; // Open file dialog
 
+
+const DEFAULT_MAP_FRACTION = 0.6;
 // Placeholder
 const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
 
@@ -30,7 +32,6 @@ const PageFileTree = props => {
   const [filePath, setFilePath] = useState(DEFAULT_PATH);
 
   const cytoscapeRef = useRef(null);
-
   const handleOpenFileOrDirectory = useCallback(
     () => {
       dialog
@@ -46,7 +47,7 @@ const PageFileTree = props => {
     [setFilePath]
   );
 
-  const { getFileTree, fileTreeList, searchResults } = props;
+  const { getFileTree, fileTreeList, searchResults, searchResultsByFile } = props;
 
   // All the cached callbacks
   const handleFetchTree = useCallback(
@@ -55,6 +56,12 @@ const PageFileTree = props => {
     },
     [filePath]
   );
+  const pageWidth = window.innerWidth;
+  const defaultMapWidth = pageWidth * DEFAULT_MAP_FRACTION; // sizing based on vega-lite sizing
+  const [storedWidth, setWidth] = useState(pageWidth - defaultMapWidth);
+
+  const leftWidth = storedWidth;
+  const rightWidth = pageWidth - leftWidth;
 
   const hasNodes = fileTreeList && fileTreeList.length > 0;
 
@@ -66,42 +73,45 @@ const PageFileTree = props => {
 
   return (<div>
       <Navbar {...appBarProps} />
-      <div className={styles.graphContainer}>
-        {hasNodes && (
-          <CytoscapeComponent
-            elements={fileTreeList}
-            style={ { width: '100%', height: '400px' }}
-            layout={{ name: 'dagre' }}
-            cy={(cy) => {
-              cytoscapeRef.current = cy;
-              // add some handlers
-              // http://js.cytoscape.org/#events/user-input-device-events
-              cy.on('tap', 'node', (event) => {
-                // We can place tooltips at this point
-                console.log(event.target.id());
-              });
+      <SplitPane split="vertical" minSize={250} defaultSize={defaultMapWidth} primary="first" onChange={size => setWidth(size)}>
+        <div className={styles.graphContainer}>
+          {hasNodes && (
+            <CytoscapeComponent
+              elements={fileTreeList}
+              style={ { width: `${leftWidth}`, height: '700px' }}
+              layout={{ name: 'dagre' }}
+              cy={(cy) => {
+                cytoscapeRef.current = cy;
+                // add some handlers
+                // http://js.cytoscape.org/#events/user-input-device-events
+                cy.on('tap', 'node', (event) => {
+                  // We can place tooltips at this point
+                  // console.log(event.target.id());
+                });
 
-            }}
-            stylesheet={[
-              {
-                // http://js.cytoscape.org/#selectors
-                selector: `node[type = 'file']`,
-                style: {
-                  opacity: 1,
-                }},
-              {
-                selector: `node[type = 'directory']`,
-                style: {
-                  // backgroundColor: 'green',
-                  opacity: 0.5,
-                  // shape: 'rectangle'
+              }}
+              stylesheet={[
+                {
+                  // http://js.cytoscape.org/#selectors
+                  selector: `node[type = 'file']`,
+                  style: {
+                    opacity: 1,
+                  }},
+                {
+                  selector: `node[type = 'directory']`,
+                  style: {
+                    // backgroundColor: 'green',
+                    opacity: 0.5,
+                    // shape: 'rectangle'
+                  }
                 }
-              }
-            ]}
-          />
-        )}
-      </div>
-      <ResultsTable rows={searchResults}/>
+              ]}
+            />
+          )}
+        </div>
+      <ResultsTable rows={searchResults} rowsByGroup={searchResultsByFile} width={rightWidth}/>
+      </SplitPane>
+
   </div>);
 };
 

@@ -1,6 +1,7 @@
 import { createSelector } from 'reselect';
 // import { network } from 'vis-network';
 import { treeToList } from 'tree-walk-util';
+import { groupBy } from 'lodash';
 
 import { FILE_TREE_REDUCER_KEY } from '../constants';
 
@@ -16,6 +17,16 @@ export const fileTree$ = createSelector(
 export const searchResults$ = createSelector(
   fileTreeState$,
   state => state.searchResults
+);
+
+// Search results by file
+export const searchResultsByFile$ = createSelector(
+  searchResults$,
+  searchResults => {
+    return Object.entries(groupBy(searchResults, result => result.file ))
+                  .map(([file, matches])=> ({ file, match: matches.length }))
+
+  }
 );
 
 
