@@ -1,9 +1,18 @@
 
-const madge = require('madge');
+
+// Filepaths
 const path = require('path');
-const directoryTree = require('directory-tree');
+
+// Dependency Tree
+const madge = require('madge');
+
+// Git Statistics
 const git = require('simple-git/promise');
 const gitlog = require('gitlog');
+
+// Filetree
+const rg = require('ripgrep-js');
+const directoryTree = require('directory-tree');
 
 
 // Based on https://github.com/jlongster/electron-with-server-example/blob/master/server-handlers.js
@@ -54,13 +63,39 @@ handlers['get-file-dependency-tree'] = async (payload) => {
 }
 
 handlers['get-directory-tree'] = async (payload) => {
-  console.log('getting directory structure as a tree');
+  console.log('Getting directory structure');
 
   // get relative path to current location
   const { absPath } = payload;
   const relativePath = path.relative(process.env.PWD, absPath);
 
   return directoryTree(relativePath);
+  // const tree = directoryTree(relativePath);
+  // // console.log({tree});
+  // // console.log({ results });
+  // return tree;
+};
+
+handlers['get-ripgrep-results'] = async payload => {
+  console.log('Run a search using ripgrep');
+
+  // get relative path to current location
+  // defaultGlobs [ '*.jsx?', '*.tsx?']
+  const { absPath, searchText, searchRegex = '', globs = [] } = payload;
+
+  // TODO: determine whether
+  const options = { string: searchText, globs };
+
+  if (searchText) {
+    options.string = searchText;
+  } else {
+    options.regex = searchRegex
+  }
+
+  // In future: support ripgrep RUST flavored regex
+  const results = await rg(absPath, options); // result contains line, column, match, file
+  console.log(`Found ${results.length} matches`);
+  return results;
 };
 
 

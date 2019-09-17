@@ -14,7 +14,7 @@ import FilterList from '@material-ui/icons/FilterList';
 import FolderOpen from '@material-ui/icons/FolderOpen';
 import InsertDriveFile from '@material-ui/icons/InsertDriveFile';
 
-import { PrimaryAppBar } from './Toolbar';
+import { Navbar } from '../Navbar';
 import FileList from './FileList';
 import CommitTree from './CommitTree';
 import {
@@ -337,7 +337,7 @@ const PageDependencyTree = props => {
         const predecessors = networkXGraph && networkXGraph.hasNode(selectedNode) ? networkXGraph.predecessors(selectedNode) : [];
 
         return <div>
-            <PrimaryAppBar {...appBarProps} />
+            <Navbar {...appBarProps} />
             <SplitPane split="vertical" minSize={250} defaultSize={defaultMapWidth} primary="first" onChange={size => setWidth(size)}>
               <div className={styles.graphContainer} style={{ width: storedWidth }}>
                 <div style={{ width: storedWidth, overflow: 'hidden', textOverflow: 'ellipsis', marginLeft: 10 }}>

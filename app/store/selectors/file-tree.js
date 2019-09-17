@@ -13,6 +13,12 @@ export const fileTree$ = createSelector(
   state => state.fileTree
 );
 
+export const searchResults$ = createSelector(
+  fileTreeState$,
+  state => state.searchResults
+);
+
+
 const ALLOW_FILES = true;
 
 export const fileTreeList$ = createSelector(

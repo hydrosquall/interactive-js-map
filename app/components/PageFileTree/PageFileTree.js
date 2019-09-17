@@ -5,7 +5,16 @@ import { remote } from 'electron';
 import CytoscapeComponent from 'react-cytoscapejs';
 import dagre from 'cytoscape-dagre';
 
-import { PrimaryAppBar } from '../PageDependencyTree/Toolbar';
+import Table from '@material-ui/core/Table';
+import TableBody from '@material-ui/core/TableBody';
+import TableCell from '@material-ui/core/TableCell';
+import TableHead from '@material-ui/core/TableHead';
+import TablePagination from '@material-ui/core/TablePagination';
+import TableRow from '@material-ui/core/TableRow';
+import TableSortLabel from '@material-ui/core/TableSortLabel';
+
+import { Navbar } from '../Navbar';
+import { ResultsTable } from './ResultsTable';
 
 import styles from './page-file-tree.css';
 
@@ -37,7 +46,7 @@ const PageFileTree = props => {
     [setFilePath]
   );
 
-  const { getFileTree, fileTreeList } = props;
+  const { getFileTree, fileTreeList, searchResults } = props;
 
   // All the cached callbacks
   const handleFetchTree = useCallback(
@@ -48,20 +57,20 @@ const PageFileTree = props => {
   );
 
   const hasNodes = fileTreeList && fileTreeList.length > 0;
-  // console.log(fileTreeList);
 
   const appBarProps = {
     handleOpenFileClick: handleOpenFileOrDirectory,
-    fetchTree: handleFetchTree
+    fetchTree: handleFetchTree,
+    filePath
   };
 
-  return <div>
-      <PrimaryAppBar {...appBarProps} />
+  return (<div>
+      <Navbar {...appBarProps} />
       <div className={styles.graphContainer}>
         {hasNodes && (
           <CytoscapeComponent
             elements={fileTreeList}
-            style={ { width: '100%', height: '800px' }}
+            style={ { width: '100%', height: '400px' }}
             layout={{ name: 'dagre' }}
             cy={(cy) => {
               cytoscapeRef.current = cy;
@@ -92,7 +101,8 @@ const PageFileTree = props => {
           />
         )}
       </div>
-    </div>;
+      <ResultsTable rows={searchResults}/>
+  </div>);
 };
 
 export default PageFileTree;

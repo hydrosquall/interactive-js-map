@@ -17,7 +17,6 @@ import Typography from '@material-ui/core/Typography';
 import FolderOpen from '@material-ui/icons/FolderOpen';
 import Help from '@material-ui/icons/Help';
 
-
 import Loop from '@material-ui/icons/Loop';
 import SettingsApplications from '@material-ui/icons/SettingsApplications';
 
@@ -36,8 +35,9 @@ import {
   SELECTED_NODE_OUTLINE,
   LEAF_NODE_COLOR,
   ISLAND_NODE_COLOR
-} from './constants';
+} from '../PageDependencyTree/constants';
 // Redux machinery
+import { getSearchResults } from '../../store/actions/file-tree';
 import { setFilterPatterns } from '../../store/actions/dependency-tree';
 import { filterPatterns$ } from '../../store/selectors/dependency-tree';
 import { pathname$ } from '../../store/selectors/router';
@@ -100,7 +100,7 @@ const useStyles = makeStyles(theme => ({
     [theme.breakpoints.up('md')]: {
       display: 'flex'
     }
-  },
+  }
 }));
 
 function FilterDialog(props) {
@@ -108,43 +108,60 @@ function FilterDialog(props) {
   const { onClose, open } = props;
 
   const patterns = useSelector(filterPatterns$); // just strings
-  const patternString = patterns.join('\n')
-  const [ rawPatterns, setRawPatterns ] = useState(patternString);
+  const patternString = patterns.join('\n');
+  const [rawPatterns, setRawPatterns] = useState(patternString);
 
-  const handleClose = useCallback((event) => {
-    onClose();
-  }, [onClose]);
+  const handleClose = useCallback(
+    event => {
+      onClose();
+    },
+    [onClose]
+  );
   const dispatch = useDispatch();
-  const handleCloseAndSave = useCallback((event) => {
-    onClose();
-    dispatch(setFilterPatterns(rawPatterns.split('\n')));
-  }, [setRawPatterns, rawPatterns]);
+  const handleCloseAndSave = useCallback(
+    event => {
+      onClose();
+      dispatch(setFilterPatterns(rawPatterns.split('\n')));
+    },
+    [setRawPatterns, rawPatterns]
+  );
 
   // Update internal state when open changes to pull down the new selector
-  useEffect(() => {
-    setRawPatterns(patternString);
-  }, [patternString])
+  useEffect(
+    () => {
+      setRawPatterns(patternString);
+    },
+    [patternString]
+  );
 
-  const handleTextChange = useCallback((event) => setRawPatterns(event.target.value), [setRawPatterns]);
+  const handleTextChange = useCallback(
+    event => setRawPatterns(event.target.value),
+    [setRawPatterns]
+  );
 
   return (
-    <Dialog onClose={handleClose} aria-labelledby="simple-dialog-title" open={open}>
+    <Dialog
+      onClose={handleClose}
+      aria-labelledby="simple-dialog-title"
+      open={open}
+    >
       <DialogTitle id="simple-dialog-title">Set Exclusion Patterns</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Exclude files with these REGEX patterns. Uses JS for client-side filtering.
+          Exclude files with these REGEX patterns. Uses JS for client-side
+          filtering.
         </DialogContentText>
         <TextField
-              autoFocus
-              margin="dense"
-              id="filterPatterns"
-              label="Enter Exclusion Patterns, 1 per line"
-              multiline
-              rowsMax="10"
-              fullWidth
-              value={rawPatterns}
-              onChange={handleTextChange}
-              />
+          autoFocus
+          margin="dense"
+          id="filterPatterns"
+          label="Enter Exclusion Patterns, 1 per line"
+          multiline
+          rowsMax="10"
+          fullWidth
+          value={rawPatterns}
+          onChange={handleTextChange}
+        />
       </DialogContent>
       <DialogActions>
         <Button onClick={handleClose} color="default">
@@ -154,10 +171,21 @@ function FilterDialog(props) {
           Save Filters
         </Button>
       </DialogActions>
-    </Dialog>);
+    </Dialog>
+  );
 }
 
-const Swatch = (props) => <div style={{ backgroundColor: props.color, height: 14, width:  14, display: 'inline-block', marginRight: 10}}></div>;
+const Swatch = props => (
+  <div
+    style={{
+      backgroundColor: props.color,
+      height: 14,
+      width: 14,
+      display: 'inline-block',
+      marginRight: 10
+    }}
+  />
+);
 
 function HelpDialog(props) {
   const classes = useStyles();
@@ -170,7 +198,12 @@ function HelpDialog(props) {
     [onClose]
   );
 
-  return <Dialog onClose={handleClose} aria-labelledby="simple-dialog-title" open={open}>
+  return (
+    <Dialog
+      onClose={handleClose}
+      aria-labelledby="simple-dialog-title"
+      open={open}
+    >
       <DialogTitle>Dependencies Legend</DialogTitle>
       <DialogContent>
         <DialogContentText>
@@ -195,22 +228,56 @@ function HelpDialog(props) {
           Close
         </Button>
       </DialogActions>
-    </Dialog>;
+    </Dialog>
+  );
 }
 
-
-export function PrimaryAppBar(props) {
+export function Navbar(props) {
   const classes = useStyles();
   const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
 
-  const handleFilterDialogOpen = useCallback((event) => {
-    setIsFilterDialogOpen(true);
-  }, [setIsFilterDialogOpen]);
+  const [searchText, setSearchText] = useState('');
 
-  const handleFilterDialogClose = useCallback((event) => {
-    setIsFilterDialogOpen(false);
-  }, [setIsFilterDialogOpen]);
+  const handleSearchChange = useCallback(
+    event => {
+      const text = event.target.value;
+      console.log('clicked');
+      if (text.endsWith('\n')) {
+        setSearchText('dog');
+      } else {
+        setSearchText(text);
+      }
+    },
+    [setSearchText]
+  );
+
+    const dispatch = useDispatch();
+
+    const { filePath } = props;
+
+  // Update search text filepath using props from the parent page. TODO: move this local state up to redux instead.
+  const handleSearchSubmit = useCallback(event => {
+    if (event.key === 'Enter') {
+      const searchTerm = event.target.value;
+
+      dispatch(getSearchResults(searchTerm, filePath));
+    }
+  }, [getSearchResults, filePath]);
+
+  const handleFilterDialogOpen = useCallback(
+    event => {
+      setIsFilterDialogOpen(true);
+    },
+    [setIsFilterDialogOpen]
+  );
+
+  const handleFilterDialogClose = useCallback(
+    event => {
+      setIsFilterDialogOpen(false);
+    },
+    [setIsFilterDialogOpen]
+  );
 
   const handleHelpDialogOpen = useCallback(
     event => {
@@ -231,17 +298,16 @@ export function PrimaryAppBar(props) {
   const isDependencyTree = pathname === routes.DEPENDENCIES;
   const isFileTree = pathname === routes.FILETREE;
 
-
-  return <div className={classes.grow}>
+  return (
+    <div className={classes.grow}>
       <AppBar position="static">
         <Toolbar>
-          {/* <IconButton
-              edge="start"
-              className={classes.menuButton} color="inherit" aria-label="open drawer">
-            <MenuIcon />
-          </IconButton> */}
           <Typography className={classes.title} variant="h6" noWrap>
-            <NavLink exact activeStyle={{ color: 'yellow' }} to={routes.DEPENDENCIES}>
+            <NavLink
+              exact
+              activeStyle={{ color: 'yellow' }}
+              to={routes.DEPENDENCIES}
+            >
               Dependencies
             </NavLink>
           </Typography>
@@ -251,16 +317,31 @@ export function PrimaryAppBar(props) {
               FileTree
             </NavLink>
           </Typography>
-          {isDependencyTree && <IconButton edge="end" onClick={handleHelpDialogOpen} color="inherit">
+          {isDependencyTree && (
+            <IconButton
+              edge="end"
+              onClick={handleHelpDialogOpen}
+              color="inherit"
+            >
               <Help />
-            </IconButton>}
+            </IconButton>
+          )}
 
-          {isFileTree && <div className={classes.search}>
-            <div className={classes.searchIcon}>
-              <SearchIcon />
+          {isFileTree && (
+            <div className={classes.search}>
+              <div className={classes.searchIcon}>
+                <SearchIcon />
+              </div>
+              <InputBase
+                placeholder="Search…"
+                classes={{ root: classes.inputRoot, input: classes.inputInput }}
+                inputProps={{ 'aria-label': 'search' }}
+                value={searchText}
+                onChange={handleSearchChange}
+                onKeyDown={handleSearchSubmit}
+              />
             </div>
-            <InputBase placeholder="Search…" classes={{ root: classes.inputRoot, input: classes.inputInput }} inputProps={{ 'aria-label': 'search' }} />
-          </div>}
+          )}
 
           <div className={classes.grow} />
           <div className={classes.sectionDesktop}>
@@ -270,13 +351,19 @@ export function PrimaryAppBar(props) {
             <IconButton onClick={props.handleOpenFileClick} color="inherit">
               <FolderOpen />
             </IconButton>
-            {isDependencyTree && <IconButton onClick={handleFilterDialogOpen} color="inherit">
+            {isDependencyTree && (
+              <IconButton onClick={handleFilterDialogOpen} color="inherit">
                 <SettingsApplications />
-              </IconButton>}
+              </IconButton>
+            )}
           </div>
         </Toolbar>
       </AppBar>
-      <FilterDialog open={isFilterDialogOpen} onClose={handleFilterDialogClose} />
+      <FilterDialog
+        open={isFilterDialogOpen}
+        onClose={handleFilterDialogClose}
+      />
       <HelpDialog open={isHelpDialogOpen} onClose={handleHelpDialogClose} />
-    </div>;
+    </div>
+  );
 }
