@@ -2,11 +2,20 @@ import { createSelector } from 'reselect';
 // import { network } from 'vis-network';
 import { treeToList } from 'tree-walk-util';
 import { groupBy } from 'lodash';
+import path from 'path';
+
+
 
 import { FILE_TREE_REDUCER_KEY } from '../constants';
 
 // Suffix all selectors with $ instead of writing "selector"
 const fileTreeState$ = (rootState) => rootState[FILE_TREE_REDUCER_KEY];
+
+// DOT format string
+export const filePath$ = createSelector(
+  fileTreeState$,
+  state => state.filePath
+);
 
 // DOT format string
 export const fileTree$ = createSelector(
@@ -20,26 +29,48 @@ export const searchResults$ = createSelector(
 );
 
 // Search results by file
-export const searchResultsByFile$ = createSelector(
-  searchResults$,
-  searchResults => {
-    return Object.entries(groupBy(searchResults, result => result.file ))
-                  .map(([file, matches])=> ({ file, match: matches.length }))
 
-  }
+// key: filename, value: Match[]
+const searchResultsByFileMap$ = createSelector(
+  searchResults$,
+  searchResults => groupBy(searchResults, result => result.file )
+);
+
+export const searchResultsByFileList$ = createSelector(
+  searchResultsByFileMap$,
+  searchResultsByFileMap => Object.entries(searchResultsByFileMap).map(
+      ([file, matches]) => ({ file, match: matches.length })
+    )
 );
 
 
 const ALLOW_FILES = true;
 
+// Resolve relative paths into abs paths.
+export const searchResultsByFileMapResolved$ = createSelector(
+  searchResultsByFileMap$,
+  filePath$,
+  (searchResultsByFileMap, filePath) => {
+
+    const newMap = {};
+    Object.entries(searchResultsByFileMap).forEach(([file, matches]) => {
+      newMap[path.join(filePath, file)] = matches;
+    });
+    return newMap;
+  }
+);
+
 export const fileTreeList$ = createSelector(
   fileTree$,
-  tree => {
+  searchResultsByFileMapResolved$,
+  (tree, searchResultsByFile)=> {
   if (!tree) {
     return;
   }
 
   const nodes = treeToList(tree).filter(node => ALLOW_FILES || node.type === 'directory');
+
+  console.log(searchResultsByFile);
 
 
   const cytoscapeElements = nodes.flatMap(node => {
@@ -49,9 +80,26 @@ export const fileTreeList$ = createSelector(
       }
       return { data: {source: node.path, target: child.path} }
       }).filter(edge => edge !== null) || [];
+
+    // Lets see if there are any search results for this node
+    const nodeData = {
+      id: node.path,
+      size: node.size,
+      type: node.type,
+      matches: 0
+    };
+
+    const fullPath = path.resolve(node.path);
+    const matches = searchResultsByFile[fullPath];
+    if (matches) {
+      nodeData.matches = matches.length
+    }
+
+    nodeData.label = `${node.name} | ${nodeData.matches}`;
+
     return [
         // node
-        { data: { id: node.path, label: node.name, size: node.size, type: node.type }},
+        { data: nodeData },
         // edges
         ...edges
       ]

@@ -1,19 +1,26 @@
 import { connect } from 'react-redux';
 
 // Redux machinery
-import { getFileTree } from '../../store/actions/file-tree';
-import { fileTreeList$, searchResults$, searchResultsByFile$ } from '../../store/selectors/file-tree';
+import { getFileTree, setFilePath } from '../../store/actions/file-tree';
+import {
+  fileTreeList$,
+  searchResults$,
+  searchResultsByFileList$,
+  filePath$
+} from '../../store/selectors/file-tree';
 
 import PageFileTree from './PageFileTree';
 
 const mapStateToProps = state => ({
   fileTreeList: fileTreeList$(state),
   searchResults: searchResults$(state),
-  searchResultsByFile: searchResultsByFile$(state)
+  searchResultsByFile: searchResultsByFileList$(state),
+  filePath: filePath$(state)
 });
 
 const mapDispatchToProps = {
-  getFileTree
+  getFileTree,
+  setFilePath
 };
 
 const PageFileTreeContainer = connect(

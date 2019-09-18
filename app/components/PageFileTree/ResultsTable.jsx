@@ -2,6 +2,8 @@ import React, { useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import clsx from 'clsx';
 
+import { sortBy } from 'lodash';
+
 import { lighten, makeStyles } from '@material-ui/core/styles';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -77,7 +79,8 @@ function EnhancedTableHead(props) {
         {headCells.map(headCell => (
           <TableCell
             key={headCell.id}
-            align={headCell.numeric ? 'right' : 'left'}
+            // align={headCell.numeric ? 'right' : 'left'}
+            align={'left'}
             padding={headCell.disablePadding ? 'none' : 'default'}
             sortDirection={orderBy === headCell.id ? order : false}
           >
@@ -140,7 +143,7 @@ const useStyles = makeStyles(theme => ({
 export function ResultsTable(props) {
   const classes = useStyles();
 
-  const [order, setOrder] = useState('asc');
+  const [order, setOrder] = useState('desc'); // default to most matches first!
 
   // if true, use the groupby version!
   const [isByFile, setIsByFile] = useState(false);
@@ -155,9 +158,9 @@ export function ResultsTable(props) {
   const [rowsPerPage, setRowsPerPage] = useState(5);
 
   function handleRequestSort(event, property) {
-    const isDesc = orderBy === property && order === 'desc';
+    const isDesc =  order === 'desc';
     setOrder(isDesc ? 'asc' : 'desc');
-    setOrderBy(property);
+    console.log(isDesc);
   }
 
   function handleChangePage(event, newPage) {
@@ -178,7 +181,7 @@ export function ResultsTable(props) {
           <Table className={classes.table} aria-labelledby="tableTitle" size={'small'}>
             <EnhancedTableHead classes={classes} order={order} onRequestSort={handleRequestSort} rowCount={rows.length} />
             <TableBody>
-              {(rows )
+              {( sortBy(rows, row => order === 'asc' ? row.match : -row.match ) )
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, index) => {
                   const labelId = `enhanced-table-checkbox-${index}`;
@@ -193,13 +196,14 @@ export function ResultsTable(props) {
                         component="th"
                         id={labelId}
                         scope="row"
-                        padding="none"
+                        // padding="none"
+                        align="right"
                         style={{ fontFamily: 'monospace' }}
                       >
                         {row.match}
                       </TableCell>
                       <TableCell
-                        align="right"
+                        align="left"
                         style={{ fontFamily: 'monospace' }}
                       >
                         {row.file}

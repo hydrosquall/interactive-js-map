@@ -1,17 +1,14 @@
 import React, { useCallback, useState, useRef } from 'react';
+import path from 'path';
 import Cytoscape from 'cytoscape';
 import { remote } from 'electron';
 import CytoscapeComponent from 'react-cytoscapejs';
 import dagre from 'cytoscape-dagre';
 import SplitPane from 'react-split-pane';
 
-import Table from '@material-ui/core/Table';
-import TableBody from '@material-ui/core/TableBody';
-import TableCell from '@material-ui/core/TableCell';
-import TableHead from '@material-ui/core/TableHead';
-import TablePagination from '@material-ui/core/TablePagination';
-import TableRow from '@material-ui/core/TableRow';
-import TableSortLabel from '@material-ui/core/TableSortLabel';
+import orange from '@material-ui/core/colors/orange';
+import grey from '@material-ui/core/colors/grey';
+
 
 import { Navbar } from '../Navbar';
 import { ResultsTable } from './ResultsTable';
@@ -19,17 +16,15 @@ import { ResultsTable } from './ResultsTable';
 import styles from './page-file-tree.css';
 
 Cytoscape.use(dagre);
+const LAYOUT_OPTIONS = { name: 'dagre', rankDir: 'LR', padding: 10 };
 
 const { dialog } = remote; // Open file dialog
 
 
 const DEFAULT_MAP_FRACTION = 0.6;
-// Placeholder
-const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
-
 
 const PageFileTree = props => {
-  const [filePath, setFilePath] = useState(DEFAULT_PATH);
+  const { getFileTree, fileTreeList, searchResults, searchResultsByFile, filePath, setFilePath } = props;
 
   const cytoscapeRef = useRef(null);
   const handleOpenFileOrDirectory = useCallback(
@@ -47,14 +42,22 @@ const PageFileTree = props => {
     [setFilePath]
   );
 
-  const { getFileTree, fileTreeList, searchResults, searchResultsByFile } = props;
-
   // All the cached callbacks
   const handleFetchTree = useCallback(
     () => {
       getFileTree(filePath);
+
+      if (cytoscapeRef.current !== null) {
+        const cy = cytoscapeRef.current;
+
+        cy.remove(':simple'); // another way to say all!
+        cy.add(fileTreeList);
+        const layout = cy.layout(LAYOUT_OPTIONS);
+        layout.run();
+
+      }
     },
-    [filePath]
+    [filePath, getFileTree, cytoscapeRef]
   );
   const pageWidth = window.innerWidth;
   const defaultMapWidth = pageWidth * DEFAULT_MAP_FRACTION; // sizing based on vega-lite sizing
@@ -78,15 +81,18 @@ const PageFileTree = props => {
           {hasNodes && (
             <CytoscapeComponent
               elements={fileTreeList}
-              style={ { width: `${leftWidth}`, height: '700px' }}
-              layout={{ name: 'dagre' }}
+              style={ { width: `${leftWidth}`, height: '800px' }}
+              layout={LAYOUT_OPTIONS}
               cy={(cy) => {
                 cytoscapeRef.current = cy;
                 // add some handlers
                 // http://js.cytoscape.org/#events/user-input-device-events
                 cy.on('tap', 'node', (event) => {
                   // We can place tooltips at this point
-                  // console.log(event.target.id());
+                  // console.log(filePath)
+                  const nodePath = event.target.id();
+                  console.log(event.target.data());
+
                 });
 
               }}
@@ -95,13 +101,24 @@ const PageFileTree = props => {
                   // http://js.cytoscape.org/#selectors
                   selector: `node[type = 'file']`,
                   style: {
+                    backgroundColor: grey[300],
                     opacity: 1,
-                  }},
+                  }
+                },
                 {
                   selector: `node[type = 'directory']`,
                   style: {
-                    // backgroundColor: 'green',
+                    backgroundColor: 'green',
                     opacity: 0.5,
+                    // shape: 'rectangle'
+                  }
+                },
+                {
+                  selector: `node[matches > 0]`,
+                  style: {
+                    backgroundColor: orange[400],
+                    content: 'data(label)'
+                    // opacity: 0.5,
                     // shape: 'rectangle'
                   }
                 }
