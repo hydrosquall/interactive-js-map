@@ -80,7 +80,7 @@ function EnhancedTableHead(props) {
           <TableCell
             key={headCell.id}
             // align={headCell.numeric ? 'right' : 'left'}
-            align={'left'}
+            align="left"
             padding={headCell.disablePadding ? 'none' : 'default'}
             sortDirection={orderBy === headCell.id ? order : false}
           >
@@ -178,7 +178,7 @@ export function ResultsTable(props) {
   return <div className={classes.root} style={{ width: props.width }}>
       <Paper className={classes.paper}>
         <div className={classes.tableWrapper}>
-          <Table className={classes.table} aria-labelledby="tableTitle" size={'small'}>
+          <Table className={classes.table} aria-labelledby="tableTitle" size="small">
             <EnhancedTableHead classes={classes} order={order} onRequestSort={handleRequestSort} rowCount={rows.length} />
             <TableBody>
               {( sortBy(rows, row => order === 'asc' ? row.match : -row.match ) )
@@ -221,6 +221,10 @@ export function ResultsTable(props) {
       </Paper>
       {props.showToggle && <FormControlLabel control={<Switch checked={isByFile} onChange={handleToggleIsByFile} />} label="Group by File" />}
     </div>;
+}
+
+ResultsTable.defaultProps = {
+  showToggle: true
 }
 
 export default {
