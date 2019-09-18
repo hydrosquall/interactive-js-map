@@ -193,11 +193,11 @@ export function ResultsTable(props) {
                       key={row.name}
                     >
                       <TableCell
-                        component="th"
+                        // component="th"
                         id={labelId}
-                        scope="row"
+                        // scope="row"
                         // padding="none"
-                        align="right"
+                        align="left"
                         style={{ fontFamily: 'monospace' }}
                       >
                         {row.match}
@@ -219,7 +219,7 @@ export function ResultsTable(props) {
         </div>
         <TablePagination style={{ width: props.width }} rowsPerPageOptions={[5, 10, 25]} component="div" count={rows.length} rowsPerPage={rowsPerPage} page={page} backIconButtonProps={{ 'aria-label': 'previous page' }} nextIconButtonProps={{ 'aria-label': 'next page' }} onChangePage={handleChangePage} onChangeRowsPerPage={handleChangeRowsPerPage} />
       </Paper>
-      <FormControlLabel control={<Switch checked={isByFile} onChange={handleToggleIsByFile} />} label="Group by File" />
+      {props.showToggle && <FormControlLabel control={<Switch checked={isByFile} onChange={handleToggleIsByFile} />} label="Group by File" />}
     </div>;
 }
 

@@ -4,8 +4,6 @@ import { treeToList } from 'tree-walk-util';
 import { groupBy } from 'lodash';
 import path from 'path';
 
-
-
 import { FILE_TREE_REDUCER_KEY } from '../constants';
 
 // Suffix all selectors with $ instead of writing "selector"
@@ -93,6 +91,7 @@ export const fileTreeList$ = createSelector(
     const matches = searchResultsByFile[fullPath];
     if (matches) {
       nodeData.matches = matches.length
+      nodeData.matchData = matches
     }
 
     nodeData.label = `${node.name} | ${nodeData.matches}`;
