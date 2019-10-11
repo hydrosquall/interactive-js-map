@@ -14,6 +14,8 @@ import FilterList from '@material-ui/icons/FilterList';
 import FolderOpen from '@material-ui/icons/FolderOpen';
 import InsertDriveFile from '@material-ui/icons/InsertDriveFile';
 
+import { dirname, resolve } from 'path';
+import { remote } from 'electron';
 import { Navbar } from '../Navbar';
 import FileList from './FileList';
 import CommitTree from './CommitTree';
@@ -27,9 +29,7 @@ import {
 } from './constants';
 
 import styles from './page-dependency-tree.css';
-import { dirname, resolve } from 'path';
 
-import { remote } from 'electron';
 
 // Placeholder
 const DEFAULT_PATH = '/Users/cameron/Projects/open-source/d3-quadtree/src';
@@ -291,7 +291,8 @@ const PageDependencyTree = props => {
 
         const events = {
           select: (event) => {
-            const { nodes, edges } = event;
+            // const { nodes, edges } = event;
+            const { nodes } = event;
 
             if (nodes.length > 0 ) {
               handleSetSelectedNode(nodes[0]);
@@ -321,7 +322,7 @@ const PageDependencyTree = props => {
           width: `${secondPaneWidth}`,
           height: '250',
           layout: { hierarchical: {
-            direction: 'DU',
+            direction: 'UD',
             sortMethod: 'directed'
           }}
         };
